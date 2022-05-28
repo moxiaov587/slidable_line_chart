@@ -11,15 +11,8 @@ class ViewPainter extends CustomPainter {
 
   final Layer layer;
 
-  late final double scaleHeight = layer.scaleHeight;
-  late final TextStyle? axisTextStyle = layer.axisTextStyle;
-  late final Color? axisColor = layer.axisColor;
-  late final Color? gridColor = layer.gridColor;
-  late final Color? axisPointColor = layer.axisPointColor;
-  late final Color? linkLineColor = layer.linkLineColor;
-  late final Color? fillAreaColor = layer.fillAreaColor;
-  late final Color? tapAreaColor = layer.tapAreaColor;
-  late final bool showTapArea = layer.showTapArea;
+  double get scaleHeight => layer.scaleHeight;
+  List<View> get views => layer.views;
 
   /// 文本绘制
   final TextPainter _textPainter =
@@ -29,31 +22,32 @@ class ViewPainter extends CustomPainter {
   late final Paint axisPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1
-    ..color = axisColor ?? Colors.black;
+    ..color = layer.axisColor ?? Colors.black;
 
   /// 坐标系线条画笔
   late final Paint gridPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..color = gridColor ?? Colors.grey
+    ..color = layer.gridColor ?? Colors.grey
     ..strokeWidth = 0.5;
 
   /// 坐标点画笔
   late final Paint axisPointPaint = Paint()
-    ..color = axisPointColor ?? Colors.blueGrey;
+    ..color = layer.axisPointColor ?? Colors.blueGrey;
 
   /// 连接线画笔
   late final linkLinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = layer.linkLineWidth
-    ..color = linkLineColor ?? Colors.blue;
+    ..color = layer.linkLineColor ?? Colors.blue;
 
   /// 范围区域画笔
   late final Paint fillAreaPaint = Paint()
-    ..color = fillAreaColor ?? (axisPointColor ?? Colors.blue).withOpacity(.3);
+    ..color = layer.fillAreaColor ??
+        (layer.axisPointColor ?? Colors.blue).withOpacity(.3);
 
   /// 触控区域画笔
   late final Paint tapAreaPaint = Paint()
-    ..color = tapAreaColor ?? Colors.red.withOpacity(.2);
+    ..color = layer.tapAreaColor ?? Colors.red.withOpacity(.2);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -69,32 +63,34 @@ class ViewPainter extends CustomPainter {
 
     canvas.drawPath(axisPath, axisPaint);
 
-    drawXAxis(canvas, size);
+    final double xStep = layer.getXAxisStepOffsetValue(size.width);
+
+    drawXAxis(canvas, size, xStep: xStep);
     drawYAxis(canvas, size);
 
-    drawLayer(canvas, size);
+    drawLayer(canvas, size, xStep: xStep);
   }
 
   /// 绘制Layer
-  void drawLayer(Canvas canvas, Size size) {
+  void drawLayer(
+    Canvas canvas,
+    Size size, {
+    required double xStep,
+  }) {
     canvas.save();
 
-    final double xStep = (size.width - scaleHeight) / layer.xAxis.length;
-
-    final double yStep = (size.height - scaleHeight) /
-        (layer.yAxisMaxValue - layer.yAxisMinValue);
-
-    final List<View> views = layer.views;
+    final double yStep = layer.getYAxisStepOffsetValue(size.height);
 
     /// 初始化[View]中的[offset]
     for (int i = 0; i < views.length; i++) {
       if (!views[i].initialFinished) {
         views[i].offset = Offset(
           (xStep / 2) + xStep * i,
-          -(size.height -
-              scaleHeight -
-              (views[i].initialValue - layer.yAxisMinValue) * yStep +
-              views[i].height / 2),
+          layer.realValue2YAxisOffsetValue(
+            views[i].initialValue - layer.yAxisMinValue,
+            chartHeight: size.height,
+            yStep: yStep,
+          ),
         );
       }
     }
@@ -103,24 +99,26 @@ class ViewPainter extends CustomPainter {
     drawFillColor(canvas, linkLinePaint);
 
     for (var view in views) {
-      if (showTapArea) {
+      if (layer.showTapArea) {
         view.drawTapArea(canvas, tapAreaPaint);
       }
 
       view.drawAxisPoint(canvas, axisPointPaint);
 
-      var value =
-          (view.rect.center.dy / yStep + layer.yAxisMaxValue).roundToDouble();
+      final double realValue = layer.yAxisOffsetValue2RealValue(
+        view.offset.dy,
+        yStep: yStep,
+      );
 
       view.drawCurrentValueText(
         canvas,
-        height: size.height,
+        chartHeight: size.height,
         textPainter: _textPainter,
-        value: value,
+        value: realValue,
       );
 
       if (layer.drawCheckOrClose != null) {
-        bool result = layer.drawCheckOrClose!.call(value);
+        bool result = layer.drawCheckOrClose!.call(realValue);
 
         if (result) {
           view.drawCheck(canvas);
@@ -135,18 +133,16 @@ class ViewPainter extends CustomPainter {
 
   /// 绘制连接线条
   void drawLinkLine(Canvas canvas, Paint paint) {
-    final List<View> views = layer.views;
-
     final Path linePath = views.skip(1).fold(
           Path()
             ..moveTo(
-              views.first.rect.center.dx,
-              views.first.rect.center.dy,
+              views.first.offset.dx,
+              views.first.offset.dy,
             ),
           (path, view) => path
             ..lineTo(
-              view.rect.center.dx,
-              view.rect.center.dy,
+              view.offset.dx,
+              view.offset.dy,
             ),
         );
 
@@ -161,21 +157,19 @@ class ViewPainter extends CustomPainter {
 
   /// 绘制范围颜色
   void drawFillColor(Canvas canvas, Paint paint) {
-    final List<View> views = layer.views;
-
     final Path path = views.fold(
       Path()
         ..moveTo(
-          views.first.rect.center.dx,
+          views.first.offset.dx,
           0,
         ),
       (path, view) => path
         ..lineTo(
-          view.rect.center.dx,
-          view.rect.center.dy,
+          view.offset.dx,
+          view.offset.dy,
         ),
     )..lineTo(
-        views.last.rect.center.dx,
+        views.last.offset.dx,
         0,
       );
 
@@ -189,14 +183,16 @@ class ViewPainter extends CustomPainter {
   }
 
   /// 绘制X轴
-  void drawXAxis(Canvas canvas, Size size) {
+  void drawXAxis(
+    Canvas canvas,
+    Size size, {
+    required double xStep,
+  }) {
     canvas.save();
 
-    final List<String> xAxis = layer.xAxis;
-
-    final double xStep = (size.width - scaleHeight) / xAxis.length;
-
     canvas.translate(xStep, 0);
+
+    final List<String> xAxis = layer.xAxis;
 
     for (int i = 0; i < xAxis.length; i++) {
       _drawAxisText(
@@ -266,7 +262,7 @@ class ViewPainter extends CustomPainter {
   }) {
     TextSpan textSpan = TextSpan(
       text: text,
-      style: axisTextStyle ??
+      style: layer.axisTextStyle ??
           const TextStyle(
             fontSize: 11,
             color: Colors.black,

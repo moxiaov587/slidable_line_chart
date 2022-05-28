@@ -15,21 +15,30 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final Layer layer = Layer(
     views: [
+      // View(initialValue: 1),
+      // View(initialValue: 2),
+      // View(initialValue: 3),
+      // View(initialValue: 4),
+      // View(initialValue: 5),
+      // View(initialValue: 6),
+
+      ///
       View(initialValue: 10),
       View(initialValue: 20),
       View(initialValue: 30),
       View(initialValue: 40),
+      View(initialValue: 50),
       View(initialValue: 60),
-      View(initialValue: 70),
     ],
     xAxis: ['500', '1k', '2k', '4', '6k', '8k'],
     yAxisStep: 5,
-    yAxisMaxValue: 100,
+    yAxisMaxValue: 120,
     yAxisMinValue: 0,
     drawCheckOrClose: (double value) {
       return value >= 30;
     },
     showTapArea: true,
+    enforceStepOffset: true,
   );
 
   String? result;

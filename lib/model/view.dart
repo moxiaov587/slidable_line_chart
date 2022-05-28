@@ -44,17 +44,16 @@ class View {
 
   bool get initialFinished => offset.dx != 0;
 
-  Rect get rect => Rect.fromLTWH(
-        offset.dx,
-        offset.dy,
-        width,
-        height,
+  Rect get rect => Rect.fromCenter(
+        center: offset,
+        width: width,
+        height: height,
       );
 
   /// 放大的[Rect]
   /// 用于增大触摸生效的判定区域
   Rect get zoomedRect => Rect.fromCenter(
-        center: rect.center,
+        center: offset,
         width: width * zoomedFactor,
         height: height * zoomedFactor,
       );
@@ -71,7 +70,7 @@ class View {
 
   void drawCurrentValueText(
     Canvas canvas, {
-    required double height, // 用于偏移使文字居顶
+    required double chartHeight, // 用于偏移使文字居顶
     required TextPainter textPainter,
     required double value,
   }) {
@@ -92,12 +91,12 @@ class View {
     Size size = textPainter.size;
 
     Offset offsetPos = Offset(-size.width / 2, -size.height / 2)
-        .translate(rect.center.dx, -height - currentValueMarginBottomValue);
+        .translate(offset.dx, -chartHeight - currentValueMarginBottomValue);
     textPainter.paint(canvas, offsetPos);
   }
 
   void drawCheck(Canvas canvas) {
-    final double x = rect.center.dx;
+    final double x = offset.dx;
     final double y = checkOrCloseIconMarginTop;
     final double radius = checkOrCloseIconSize;
 
@@ -127,7 +126,7 @@ class View {
   }
 
   void drawClose(Canvas canvas) {
-    final double x = rect.center.dx;
+    final double x = offset.dx;
     final double y = checkOrCloseIconMarginTop;
     final double radius = checkOrCloseIconSize;
     final double size = closeSize;

@@ -25,22 +25,21 @@ class FlutterLineChart extends StatefulWidget {
 class _FlutterLineChartState extends State<FlutterLineChart> {
   View? currentSelectedView;
 
+  Layer get layer => widget.layer;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (_, BoxConstraints constraints) {
-        final double width = constraints.maxWidth;
-        final double height = constraints.maxHeight;
+        final double chartWidth = constraints.maxWidth;
+        final double chartHeight = constraints.maxHeight;
 
         return GestureDetector(
           onPanStart: (DragStartDetails details) {
-            var offset =
-                details.localPosition.translate(-widget.layer.scaleHeight, 0);
-
-            currentSelectedView = widget.layer.hintTestView(
-              Offset(
-                offset.dx,
-                offset.dy - height,
+            currentSelectedView = layer.hintTestView(
+              layer.adjustLocalPosition(
+                details.localPosition,
+                chartHeight: chartHeight,
               ),
             );
 
@@ -50,16 +49,38 @@ class _FlutterLineChartState extends State<FlutterLineChart> {
           },
           onPanUpdate: (DragUpdateDetails details) {
             if (currentSelectedView != null) {
+              late double dy;
+
+              if (layer.enforceStepOffset) {
+                dy = layer.getWithinRangeYAxisOffsetValue(
+                  details.localPosition.dy,
+                  chartHeight: chartHeight,
+                  stepFactor: layer.yAxisStep,
+                );
+
+                final double yStep = layer.getYAxisStepOffsetValue(chartHeight);
+
+                final double realValue = layer.yAxisOffsetValue2RealValue(
+                  dy,
+                  yStep: yStep,
+                );
+
+                dy = layer.realValue2YAxisOffsetValue(
+                  realValue,
+                  chartHeight: chartHeight,
+                  yStep: yStep,
+                  stepFactor: layer.yAxisStep,
+                );
+              } else {
+                dy = layer.getWithinRangeYAxisOffsetValue(
+                  details.localPosition.dy,
+                  chartHeight: chartHeight,
+                );
+              }
+
               currentSelectedView!.offset = Offset(
                 currentSelectedView!.offset.dx,
-                (details.localPosition.dy - height)
-                    .clamp(
-                      widget.layer.scaleHeight -
-                          height -
-                          currentSelectedView!.height / 2,
-                      0 - currentSelectedView!.height / 2,
-                    )
-                    .floorToDouble(),
+                dy,
               );
 
               setState(() {});
@@ -69,7 +90,7 @@ class _FlutterLineChartState extends State<FlutterLineChart> {
             currentSelectedView = null;
           },
           child: CustomPaint(
-            size: Size(width, height),
+            size: Size(chartWidth, chartHeight),
             painter: ViewPainter(
               layer: widget.layer,
             ),
