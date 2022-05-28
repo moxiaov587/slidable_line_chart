@@ -10,22 +10,23 @@ import 'model/layer.dart';
 import 'model/view.dart';
 import 'layer_painter.dart';
 
-class FlutterLineChart extends StatefulWidget {
+class FlutterLineChart<E extends Enum> extends StatefulWidget {
   const FlutterLineChart({
     Key? key,
     required this.layer,
   }) : super(key: key);
 
-  final Layer layer;
+  final Layer<E> layer;
 
   @override
-  State<FlutterLineChart> createState() => _FlutterLineChartState();
+  State<FlutterLineChart<E>> createState() => _FlutterLineChartState<E>();
 }
 
-class _FlutterLineChartState extends State<FlutterLineChart> {
-  View? currentSelectedView;
+class _FlutterLineChartState<E extends Enum>
+    extends State<FlutterLineChart<E>> {
+  View<E>? currentSelectedView;
 
-  Layer get layer => widget.layer;
+  Layer<E> get layer => widget.layer;
 
   @override
   Widget build(BuildContext context) {
@@ -91,7 +92,7 @@ class _FlutterLineChartState extends State<FlutterLineChart> {
           },
           child: CustomPaint(
             size: Size(chartWidth, chartHeight),
-            painter: ViewPainter(
+            painter: ViewPainter<E>(
               layer: widget.layer,
             ),
           ),

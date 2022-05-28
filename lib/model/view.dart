@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 
-class View {
+class ViewStyle {
+  ViewStyle({
+    this.axisPointColor,
+    this.linkLineColor,
+    this.fillAreaColor,
+  });
+
+  /// 坐标点颜色
+  final Color? axisPointColor;
+
+  /// 连接线颜色
+  final Color? linkLineColor;
+
+  /// 覆盖区域颜色
+  final Color? fillAreaColor;
+}
+
+class View<E extends Enum> {
   View({
+    required this.type,
     required this.initialValue,
     this.width = 12,
     this.height = 12,
@@ -18,6 +36,7 @@ class View {
     this.closeColor,
   }) : offset = Offset(0, initialValue);
 
+  final E type;
   final double initialValue;
   final double width;
   final double height;
@@ -49,6 +68,9 @@ class View {
         width: width,
         height: height,
       );
+
+  /// 默认只能拖动枚举类型的第一项
+  bool get canDrag => type.index == 0;
 
   /// 放大的[Rect]
   /// 用于增大触摸生效的判定区域

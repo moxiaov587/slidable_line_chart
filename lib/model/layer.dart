@@ -6,30 +6,45 @@ import 'view.dart';
 /// 返回bool值渲染对应图标
 typedef DrawCheckOrClose = bool Function(double value);
 
-class Layer {
+class Layer<E extends Enum> {
   Layer({
-    required this.views,
+    required this.viewTypeValues,
+    required this.allViews,
     required this.xAxis,
     required this.yAxisStep,
     required this.yAxisMaxValue,
     required this.yAxisMinValue,
+    this.reversedYAxis = false,
+    this.onlyRenderEvenYAxisText = true,
     this.scaleHeight = 8.0,
     this.linkLineWidth = 2.0,
     this.axisTextStyle,
     this.axisColor,
     this.gridColor,
-    this.axisPointColor,
-    this.linkLineColor,
-    this.fillAreaColor,
+    this.defaultAxisPointColor,
+    this.defaultLinkLineColor,
+    this.defaultFillAreaColor,
+    this.viewStyles,
     this.tapAreaColor,
     this.enforceStepOffset = false,
     this.showTapArea = false,
     this.drawCheckOrClose,
-  }) : yAxis = List.generate((yAxisMaxValue - yAxisMinValue) ~/ yAxisStep,
-            (int index) => index * yAxisStep).toList();
+  }) : yAxis = reversedYAxis
+            ? List.generate((yAxisMaxValue - yAxisMinValue) ~/ yAxisStep,
+                    (int index) => yAxisMinValue + index * yAxisStep)
+                .reversed
+                .toList()
+            : List.generate((yAxisMaxValue - yAxisMinValue) ~/ yAxisStep,
+                (int index) => yAxisMinValue + index * yAxisStep).toList();
+
+  final List<E> viewTypeValues;
+
+  final Map<E, ViewStyle>? viewStyles;
+
+  ViewStyle? getViewStyleByViewType(E type) => viewStyles?[type];
 
   /// 点集
-  final List<View> views;
+  final List<View<E>> allViews;
 
   /// X轴值
   final List<String> xAxis;
@@ -42,6 +57,12 @@ class Layer {
 
   /// Y轴分隔值
   final int yAxisStep;
+
+  /// 反转Y轴
+  final bool reversedYAxis;
+
+  /// 只渲染偶数项的Y轴文本
+  final bool onlyRenderEvenYAxisText;
 
   /// Y轴值
   final List<int> yAxis;
@@ -62,13 +83,13 @@ class Layer {
   final Color? gridColor;
 
   /// 坐标点颜色
-  final Color? axisPointColor;
+  final Color? defaultAxisPointColor;
 
   /// 连接线颜色
-  final Color? linkLineColor;
+  final Color? defaultLinkLineColor;
 
   /// 覆盖区域颜色
-  final Color? fillAreaColor;
+  final Color? defaultFillAreaColor;
 
   /// 触摸区域颜色
   final Color? tapAreaColor;
@@ -82,8 +103,33 @@ class Layer {
 
   final DrawCheckOrClose? drawCheckOrClose;
 
-  List<int> get currentViewsValue =>
-      views.map((view) => view.currentValue.abs().toInt()).toList();
+  List<List<View<E>>> get views => viewTypeValues
+      .fold<List<List<View<E>>?>>(
+        <List<View<E>>?>[],
+        (previousValue, type) {
+          List<View<E>>? data =
+              allViews.where((view) => view.type == type).toList();
+
+          if (data.isEmpty) {
+            data = null;
+          }
+
+          return [
+            ...previousValue,
+            data,
+          ];
+        },
+      )
+      .whereType<List<View<E>>>()
+      .toList();
+
+  bool get hasCanDragViews => views.first.first.canDrag;
+
+  List<View<E>> get canDragViews => views.first;
+
+  List<int>? get currentViewsValue => hasCanDragViews
+      ? canDragViews.map((view) => view.currentValue.abs().toInt()).toList()
+      : null;
 
   Offset adjustLocalPosition(
     Offset localPosition, {
@@ -115,14 +161,22 @@ class Layer {
     required double yStep,
     int stepFactor = 1,
   }) =>
-      -(chartHeight - scaleHeight - value * yStep) * stepFactor;
+      (reversedYAxis
+          ? -(chartHeight - scaleHeight - value * yStep)
+          : -value * yStep) *
+      stepFactor;
 
   double yAxisOffsetValue2RealValue(
     double yOffset, {
     required double yStep,
   }) =>
-      (yOffset / yStep + yAxisMaxValue).roundToDouble();
+      (reversedYAxis
+              ? (yOffset / yStep + yAxisMaxValue)
+              : -(yOffset / yStep + yAxisMinValue))
+          .roundToDouble();
 
-  View? hintTestView(Offset position) =>
-      views.reversed.firstWhereOrNull((view) => view.hintTestView(position));
+  View<E>? hintTestView(Offset position) => hasCanDragViews
+      ? canDragViews.reversed
+          .firstWhereOrNull((view) => view.hintTestView(position))
+      : null;
 }

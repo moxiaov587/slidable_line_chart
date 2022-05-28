@@ -6,13 +6,21 @@ import 'package:flutter/widgets.dart';
 import 'model/layer.dart';
 import 'model/view.dart';
 
-class ViewPainter extends CustomPainter {
+class ViewPainter<E extends Enum> extends CustomPainter {
   ViewPainter({required this.layer});
 
-  final Layer layer;
+  final Layer<E> layer;
 
   double get scaleHeight => layer.scaleHeight;
-  List<View> get views => layer.views;
+  List<List<View<E>>> get views => layer.views;
+
+  Color get defaultAxisPointColor =>
+      layer.defaultAxisPointColor ?? Colors.blueGrey;
+  Color get defaultLinkLineColor => layer.defaultLinkLineColor ?? Colors.blue;
+  Color get defaultFillAreaColor =>
+      layer.defaultFillAreaColor ??
+      layer.defaultAxisPointColor ??
+      Colors.blue.withOpacity(.3);
 
   /// 文本绘制
   final TextPainter _textPainter =
@@ -31,19 +39,16 @@ class ViewPainter extends CustomPainter {
     ..strokeWidth = 0.5;
 
   /// 坐标点画笔
-  late final Paint axisPointPaint = Paint()
-    ..color = layer.axisPointColor ?? Colors.blueGrey;
+  late final Paint axisPointPaint = Paint()..color = defaultAxisPointColor;
 
   /// 连接线画笔
   late final linkLinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = layer.linkLineWidth
-    ..color = layer.linkLineColor ?? Colors.blue;
+    ..color = defaultLinkLineColor;
 
   /// 范围区域画笔
-  late final Paint fillAreaPaint = Paint()
-    ..color = layer.fillAreaColor ??
-        (layer.axisPointColor ?? Colors.blue).withOpacity(.3);
+  late final Paint fillAreaPaint = Paint()..color = defaultFillAreaColor;
 
   /// 触控区域画笔
   late final Paint tapAreaPaint = Paint()
@@ -83,47 +88,76 @@ class ViewPainter extends CustomPainter {
 
     /// 初始化[View]中的[offset]
     for (int i = 0; i < views.length; i++) {
-      if (!views[i].initialFinished) {
-        views[i].offset = Offset(
-          (xStep / 2) + xStep * i,
-          layer.realValue2YAxisOffsetValue(
-            views[i].initialValue - layer.yAxisMinValue,
-            chartHeight: size.height,
-            yStep: yStep,
-          ),
+      for (int j = 0; j < views[i].length; j++) {
+        if (!views[i][j].initialFinished) {
+          views[i][j].offset = Offset(
+            (xStep / 2) + xStep * j,
+            layer.realValue2YAxisOffsetValue(
+              views[i][j].initialValue - layer.yAxisMinValue,
+              chartHeight: size.height,
+              yStep: yStep,
+            ),
+          );
+        }
+      }
+    }
+
+    List<List<View<E>>> otherViews =
+        layer.hasCanDragViews ? layer.views.sublist(1) : layer.views;
+
+    for (var views in otherViews.reversed) {
+      final ViewStyle? viewStyle =
+          layer.getViewStyleByViewType(views.first.type);
+
+      drawLinkLine(canvas, views: views, viewStyle: viewStyle);
+      drawFillColor(canvas, views: views, viewStyle: viewStyle);
+      for (var view in views) {
+        view.drawAxisPoint(
+          canvas,
+          axisPointPaint
+            ..color = viewStyle?.axisPointColor ?? defaultAxisPointColor,
         );
       }
     }
 
-    drawLinkLine(canvas, linkLinePaint);
-    drawFillColor(canvas, linkLinePaint);
+    if (layer.hasCanDragViews) {
+      final ViewStyle? viewStyle =
+          layer.getViewStyleByViewType(layer.canDragViews.first.type);
 
-    for (var view in views) {
-      if (layer.showTapArea) {
-        view.drawTapArea(canvas, tapAreaPaint);
-      }
+      drawLinkLine(canvas, views: layer.canDragViews, viewStyle: viewStyle);
+      drawFillColor(canvas, views: layer.canDragViews, viewStyle: viewStyle);
 
-      view.drawAxisPoint(canvas, axisPointPaint);
+      for (var view in layer.canDragViews) {
+        if (layer.showTapArea) {
+          view.drawTapArea(canvas, tapAreaPaint);
+        }
 
-      final double realValue = layer.yAxisOffsetValue2RealValue(
-        view.offset.dy,
-        yStep: yStep,
-      );
+        view.drawAxisPoint(
+          canvas,
+          axisPointPaint
+            ..color = viewStyle?.axisPointColor ?? defaultAxisPointColor,
+        );
 
-      view.drawCurrentValueText(
-        canvas,
-        chartHeight: size.height,
-        textPainter: _textPainter,
-        value: realValue,
-      );
+        final double realValue = layer.yAxisOffsetValue2RealValue(
+          view.offset.dy,
+          yStep: yStep,
+        );
 
-      if (layer.drawCheckOrClose != null) {
-        bool result = layer.drawCheckOrClose!.call(realValue);
+        view.drawCurrentValueText(
+          canvas,
+          chartHeight: size.height,
+          textPainter: _textPainter,
+          value: realValue,
+        );
 
-        if (result) {
-          view.drawCheck(canvas);
-        } else {
-          view.drawClose(canvas);
+        if (layer.drawCheckOrClose != null) {
+          bool result = layer.drawCheckOrClose!.call(realValue);
+
+          if (result) {
+            view.drawCheck(canvas);
+          } else {
+            view.drawClose(canvas);
+          }
         }
       }
     }
@@ -132,7 +166,11 @@ class ViewPainter extends CustomPainter {
   }
 
   /// 绘制连接线条
-  void drawLinkLine(Canvas canvas, Paint paint) {
+  void drawLinkLine(
+    Canvas canvas, {
+    required List<View<E>> views,
+    ViewStyle? viewStyle,
+  }) {
     final Path linePath = views.skip(1).fold(
           Path()
             ..moveTo(
@@ -150,13 +188,17 @@ class ViewPainter extends CustomPainter {
     for (var pm in pms) {
       canvas.drawPath(
         pm.extractPath(0, pm.length),
-        paint,
+        linkLinePaint..color = viewStyle?.linkLineColor ?? defaultLinkLineColor,
       );
     }
   }
 
   /// 绘制范围颜色
-  void drawFillColor(Canvas canvas, Paint paint) {
+  void drawFillColor(
+    Canvas canvas, {
+    required List<View<E>> views,
+    ViewStyle? viewStyle,
+  }) {
     final Path path = views.fold(
       Path()
         ..moveTo(
@@ -177,7 +219,7 @@ class ViewPainter extends CustomPainter {
     for (var pm in pms) {
       canvas.drawPath(
         pm.extractPath(0, pm.length),
-        fillAreaPaint,
+        fillAreaPaint..color = viewStyle?.fillAreaColor ?? defaultFillAreaColor,
       );
     }
   }
@@ -216,18 +258,9 @@ class ViewPainter extends CustomPainter {
 
     final double yStep = (size.height - scaleHeight) / yAxis.length;
 
-    for (int i = yAxis.length; i >= 0; i--) {
-      if (i == yAxis.length) {
-        // 第一条线有轴线，所以不必绘制坐标系线
-        _drawAxisText(
-          canvas,
-          '${layer.yAxisMaxValue}',
-          offset: const Offset(-10, 2),
-        );
-
-        canvas.translate(0, -yStep);
-        continue;
-      } else {
+    for (int i = 0; i <= yAxis.length; i++) {
+      // 第一条线有轴线，所以不必绘制坐标系线
+      if (i != 0) {
         // 绘制坐标系线
         canvas.drawLine(
           Offset.zero,
@@ -236,15 +269,27 @@ class ViewPainter extends CustomPainter {
         );
       }
 
-      if (i.isEven) {
-        canvas.drawLine(
-          Offset(-scaleHeight, 0),
-          Offset.zero,
-          axisPaint,
-        );
+      if (!layer.onlyRenderEvenYAxisText ||
+          (layer.onlyRenderEvenYAxisText && i.isEven)) {
+        late int value;
+
+        if (layer.reversedYAxis) {
+          if (i == yAxis.length) {
+            value = layer.yAxisMinValue;
+          } else {
+            value = yAxis[i] + layer.yAxisStep;
+          }
+        } else {
+          if (i == yAxis.length) {
+            value = layer.yAxisMaxValue;
+          } else {
+            value = yAxis[i];
+          }
+        }
+
         _drawAxisText(
           canvas,
-          '${yAxis[i]}',
+          '$value',
           offset: const Offset(-10, 2),
         );
       }

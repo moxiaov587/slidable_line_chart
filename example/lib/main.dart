@@ -5,6 +5,12 @@ void main() {
   runApp(const MyApp());
 }
 
+enum ViewType {
+  all,
+  left,
+  right,
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -13,22 +19,37 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  final Layer layer = Layer(
-    views: [
-      // View(initialValue: 1),
-      // View(initialValue: 2),
-      // View(initialValue: 3),
-      // View(initialValue: 4),
-      // View(initialValue: 5),
-      // View(initialValue: 6),
+  final Layer<ViewType> layer = Layer(
+    viewTypeValues: ViewType.values,
+    allViews: [
+      // View<ViewType>(type: ViewType.left, initialValue: 1),
+      // View<ViewType>(type: ViewType.left, initialValue: 2),
+      // View<ViewType>(type: ViewType.left, initialValue: 3),
+      // View<ViewType>(type: ViewType.left, initialValue: 4),
+      // View<ViewType>(type: ViewType.left, initialValue: 5),
+      // View<ViewType>(type: ViewType.left, initialValue: 6),
 
       ///
-      View(initialValue: 10),
-      View(initialValue: 20),
-      View(initialValue: 30),
-      View(initialValue: 40),
-      View(initialValue: 50),
-      View(initialValue: 60),
+      // View<ViewType>(type: ViewType.all, initialValue: 30),
+      // View<ViewType>(type: ViewType.all, initialValue: 50),
+      // View<ViewType>(type: ViewType.all, initialValue: 70),
+      // View<ViewType>(type: ViewType.all, initialValue: 90),
+      // View<ViewType>(type: ViewType.all, initialValue: 110),
+      // View<ViewType>(type: ViewType.all, initialValue: 10),
+
+      View<ViewType>(type: ViewType.left, initialValue: 10),
+      View<ViewType>(type: ViewType.left, initialValue: 20),
+      View<ViewType>(type: ViewType.left, initialValue: 30),
+      View<ViewType>(type: ViewType.left, initialValue: 40),
+      View<ViewType>(type: ViewType.left, initialValue: 50),
+      View<ViewType>(type: ViewType.left, initialValue: 60),
+
+      View<ViewType>(type: ViewType.right, initialValue: 60),
+      View<ViewType>(type: ViewType.right, initialValue: 50),
+      View<ViewType>(type: ViewType.right, initialValue: 40),
+      View<ViewType>(type: ViewType.right, initialValue: 30),
+      View<ViewType>(type: ViewType.right, initialValue: 20),
+      View<ViewType>(type: ViewType.right, initialValue: 10),
     ],
     xAxis: ['500', '1k', '2k', '4', '6k', '8k'],
     yAxisStep: 5,
@@ -39,6 +60,13 @@ class _MyAppState extends State<MyApp> {
     },
     showTapArea: true,
     enforceStepOffset: true,
+    viewStyles: {
+      ViewType.left: ViewStyle(
+        axisPointColor: Colors.red,
+        linkLineColor: Colors.redAccent,
+        fillAreaColor: Colors.red.withOpacity(.3),
+      )
+    },
   );
 
   String? result;
@@ -75,7 +103,11 @@ class _MyAppState extends State<MyApp> {
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             setState(() {
-              result = layer.currentViewsValue.join(', ');
+              if (layer.currentViewsValue == null) {
+                result = '当前没有有效的可拖动[View]';
+              } else {
+                result = layer.currentViewsValue!.join(', ');
+              }
             });
           },
           child: const Icon(Icons.save),
