@@ -3,23 +3,156 @@ import 'dart:ui';
 import 'package:flutter/material.dart' show Colors;
 import 'package:flutter/widgets.dart';
 
-import 'model/layer.dart';
 import 'model/view.dart';
 
+/// 返回bool值渲染对应图标
+typedef DrawCheckOrClose = bool Function(double value);
+
+typedef GetViewStyleByViewType<E extends Enum> = ViewStyle? Function(E type);
+typedef AdjustLocalPosition = Offset Function(
+  Offset localPosition, {
+  required double chartHeight,
+});
+
+typedef GetAxisStepOffsetValue = double Function(double chartWidth);
+
+typedef GetWithinRangeYAxisOffsetValue = double Function(
+  double dy, {
+  required double chartHeight,
+  required double yStep,
+  int stepFactor,
+});
+
+typedef RealValue2YAxisOffsetValue = double Function(
+  double value, {
+  required double chartHeight,
+  required double yStep,
+  int stepFactor,
+});
+
+typedef YAxisOffsetValue2RealValue = double Function(
+  double yOffset, {
+  required double yStep,
+});
+
 class ViewPainter<E extends Enum> extends CustomPainter {
-  ViewPainter({required this.layer}) : super(repaint: layer);
+  ViewPainter({
+    required this.viewsGroup,
+    required this.otherViewsGroup,
+    required this.hasCanDragViews,
+    required this.canDragViews,
+    required this.xAxis,
+    required this.yAxis,
+    required this.yAxisStep,
+    required this.yAxisMaxValue,
+    required this.yAxisMinValue,
+    required this.reversedYAxis,
+    required this.onlyRenderEvenYAxisText,
+    required this.scaleHeight,
+    required this.linkLineWidth,
+    required this.axisTextStyle,
+    required this.axisColor,
+    required this.gridColor,
+    required this.defaultAxisPointColor,
+    required this.defaultLinkLineColor,
+    required this.defaultFillAreaColor,
+    required this.tapAreaColor,
+    required this.enforceStepOffset,
+    required this.showTapArea,
+    required this.drawCheckOrClose,
+    required this.getViewStyleByViewType,
+    required this.adjustLocalPosition,
+    required this.getXAxisStepOffsetValue,
+    required this.getYAxisStepOffsetValue,
+    required this.getWithinRangeYAxisOffsetValue,
+    required this.realValue2YAxisOffsetValue,
+    required this.yAxisOffsetValue2RealValue,
+  });
 
-  final Layer<E> layer;
+  final List<List<View<E>>> viewsGroup;
 
-  double get scaleHeight => layer.scaleHeight;
-  List<List<View<E>>> get views => layer.viewsGroup;
+  final List<List<View<E>>> otherViewsGroup;
 
-  Color get defaultAxisPointColor =>
-      layer.defaultAxisPointColor ?? Colors.blueGrey;
-  Color get defaultLinkLineColor => layer.defaultLinkLineColor ?? Colors.blue;
-  Color get defaultFillAreaColor =>
-      layer.defaultFillAreaColor ??
-      layer.defaultAxisPointColor ??
+  final bool hasCanDragViews;
+
+  final List<View<E>>? canDragViews;
+
+  /// X轴值
+  final List<String> xAxis;
+
+  /// Y轴最小值
+  final int yAxisMinValue;
+
+  /// Y轴最大值
+  final int yAxisMaxValue;
+
+  /// Y轴分隔值
+  final int yAxisStep;
+
+  /// 反转Y轴
+  final bool reversedYAxis;
+
+  /// 只渲染偶数项的Y轴文本
+  final bool onlyRenderEvenYAxisText;
+
+  /// Y轴值
+  final List<int> yAxis;
+
+  /// 刻度高度
+  final double scaleHeight;
+
+  /// 连接线的宽度
+  final double linkLineWidth;
+
+  /// 坐标轴文本样式
+  final TextStyle? axisTextStyle;
+
+  /// 坐标轴颜色
+  final Color? axisColor;
+
+  /// 坐标系网格颜色
+  final Color? gridColor;
+
+  /// 坐标点颜色
+  final Color? defaultAxisPointColor;
+
+  /// 连接线颜色
+  final Color? defaultLinkLineColor;
+
+  /// 覆盖区域颜色
+  final Color? defaultFillAreaColor;
+
+  /// 触摸区域颜色
+  final Color? tapAreaColor;
+
+  /// 强制步进偏移
+  final bool enforceStepOffset;
+
+  /// 显示触摸区域
+  /// 一般用于调试
+  final bool showTapArea;
+
+  final DrawCheckOrClose? drawCheckOrClose;
+
+  final GetViewStyleByViewType<E> getViewStyleByViewType;
+
+  final AdjustLocalPosition adjustLocalPosition;
+
+  final GetAxisStepOffsetValue getXAxisStepOffsetValue;
+
+  final GetAxisStepOffsetValue getYAxisStepOffsetValue;
+
+  final GetWithinRangeYAxisOffsetValue getWithinRangeYAxisOffsetValue;
+
+  final RealValue2YAxisOffsetValue realValue2YAxisOffsetValue;
+
+  final YAxisOffsetValue2RealValue yAxisOffsetValue2RealValue;
+
+  Color get axisPointColor => defaultAxisPointColor ?? Colors.blueGrey;
+  Color get linkLineColor => defaultLinkLineColor ?? Colors.blue;
+  Color get fillAreaColor =>
+      defaultFillAreaColor ??
+      defaultAxisPointColor ??
       Colors.blue.withOpacity(.3);
 
   /// 文本绘制
@@ -30,29 +163,29 @@ class ViewPainter<E extends Enum> extends CustomPainter {
   late final Paint axisPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1
-    ..color = layer.axisColor ?? Colors.black;
+    ..color = axisColor ?? Colors.black;
 
   /// 坐标系线条画笔
   late final Paint gridPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..color = layer.gridColor ?? Colors.grey
+    ..color = gridColor ?? Colors.grey
     ..strokeWidth = 0.5;
 
   /// 坐标点画笔
-  late final Paint axisPointPaint = Paint()..color = defaultAxisPointColor;
+  late final Paint axisPointPaint = Paint()..color = axisPointColor;
 
   /// 连接线画笔
   late final linkLinePaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = layer.linkLineWidth
-    ..color = defaultLinkLineColor;
+    ..strokeWidth = linkLineWidth
+    ..color = linkLineColor;
 
   /// 范围区域画笔
-  late final Paint fillAreaPaint = Paint()..color = defaultFillAreaColor;
+  late final Paint fillAreaPaint = Paint()..color = fillAreaColor;
 
   /// 触控区域画笔
   late final Paint tapAreaPaint = Paint()
-    ..color = layer.tapAreaColor ?? Colors.red.withOpacity(.2);
+    ..color = tapAreaColor ?? Colors.red.withOpacity(.2);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -68,7 +201,7 @@ class ViewPainter<E extends Enum> extends CustomPainter {
 
     canvas.drawPath(axisPath, axisPaint);
 
-    final double xStep = layer.getXAxisStepOffsetValue(size.width);
+    final double xStep = getXAxisStepOffsetValue(size.width);
 
     drawXAxis(canvas, size, xStep: xStep);
     drawYAxis(canvas, size);
@@ -84,16 +217,16 @@ class ViewPainter<E extends Enum> extends CustomPainter {
   }) {
     canvas.save();
 
-    final double yStep = layer.getYAxisStepOffsetValue(size.height);
+    final double yStep = getYAxisStepOffsetValue(size.height);
 
     /// 初始化[View]中的[offset]
-    for (int i = 0; i < views.length; i++) {
-      for (int j = 0; j < views[i].length; j++) {
-        if (!views[i][j].initialFinished) {
-          views[i][j].offset = Offset(
+    for (int i = 0; i < viewsGroup.length; i++) {
+      for (int j = 0; j < viewsGroup[i].length; j++) {
+        if (!viewsGroup[i][j].initialFinished) {
+          viewsGroup[i][j].offset = Offset(
             (xStep / 2) + xStep * j,
-            layer.realValue2YAxisOffsetValue(
-              views[i][j].initialValue - layer.yAxisMinValue,
+            realValue2YAxisOffsetValue(
+              viewsGroup[i][j].initialValue - yAxisMinValue,
               chartHeight: size.height,
               yStep: yStep,
             ),
@@ -102,40 +235,37 @@ class ViewPainter<E extends Enum> extends CustomPainter {
       }
     }
 
-    for (var views in layer.otherViews.reversed) {
-      final ViewStyle? viewStyle =
-          layer.getViewStyleByViewType(views.first.type);
+    for (var views in otherViewsGroup.reversed) {
+      final ViewStyle? viewStyle = getViewStyleByViewType(views.first.type);
 
       drawLinkLine(canvas, views: views, viewStyle: viewStyle);
       drawFillColor(canvas, views: views, viewStyle: viewStyle);
       for (var view in views) {
         view.drawAxisPoint(
           canvas,
-          axisPointPaint
-            ..color = viewStyle?.axisPointColor ?? defaultAxisPointColor,
+          axisPointPaint..color = viewStyle?.axisPointColor ?? axisPointColor,
         );
       }
     }
 
-    if (layer.hasCanDragViews) {
+    if (hasCanDragViews) {
       final ViewStyle? viewStyle =
-          layer.getViewStyleByViewType(layer.canDragViews!.first.type);
+          getViewStyleByViewType(canDragViews!.first.type);
 
-      drawLinkLine(canvas, views: layer.canDragViews!, viewStyle: viewStyle);
-      drawFillColor(canvas, views: layer.canDragViews!, viewStyle: viewStyle);
+      drawLinkLine(canvas, views: canDragViews!, viewStyle: viewStyle);
+      drawFillColor(canvas, views: canDragViews!, viewStyle: viewStyle);
 
-      for (var view in layer.canDragViews!) {
-        if (layer.showTapArea) {
+      for (var view in canDragViews!) {
+        if (showTapArea) {
           view.drawTapArea(canvas, tapAreaPaint);
         }
 
         view.drawAxisPoint(
           canvas,
-          axisPointPaint
-            ..color = viewStyle?.axisPointColor ?? defaultAxisPointColor,
+          axisPointPaint..color = viewStyle?.axisPointColor ?? axisPointColor,
         );
 
-        final double realValue = layer.yAxisOffsetValue2RealValue(
+        final double realValue = yAxisOffsetValue2RealValue(
           view.offset.dy,
           yStep: yStep,
         );
@@ -147,8 +277,8 @@ class ViewPainter<E extends Enum> extends CustomPainter {
           value: realValue,
         );
 
-        if (layer.drawCheckOrClose != null) {
-          bool result = layer.drawCheckOrClose!.call(realValue);
+        if (drawCheckOrClose != null) {
+          bool result = drawCheckOrClose!.call(realValue);
 
           if (result) {
             view.drawCheck(canvas);
@@ -185,7 +315,7 @@ class ViewPainter<E extends Enum> extends CustomPainter {
     for (var pm in pms) {
       canvas.drawPath(
         pm.extractPath(0, pm.length),
-        linkLinePaint..color = viewStyle?.linkLineColor ?? defaultLinkLineColor,
+        linkLinePaint..color = viewStyle?.linkLineColor ?? linkLineColor,
       );
     }
   }
@@ -216,7 +346,7 @@ class ViewPainter<E extends Enum> extends CustomPainter {
     for (var pm in pms) {
       canvas.drawPath(
         pm.extractPath(0, pm.length),
-        fillAreaPaint..color = viewStyle?.fillAreaColor ?? defaultFillAreaColor,
+        fillAreaPaint..color = viewStyle?.fillAreaColor ?? fillAreaColor,
       );
     }
   }
@@ -230,8 +360,6 @@ class ViewPainter<E extends Enum> extends CustomPainter {
     canvas.save();
 
     canvas.translate(xStep, 0);
-
-    final List<String> xAxis = layer.xAxis;
 
     for (int i = 0; i < xAxis.length; i++) {
       _drawAxisText(
@@ -251,8 +379,6 @@ class ViewPainter<E extends Enum> extends CustomPainter {
   void drawYAxis(Canvas canvas, Size size) {
     canvas.save();
 
-    final List<int> yAxis = layer.yAxis;
-
     final double yStep = (size.height - scaleHeight) / yAxis.length;
 
     for (int i = 0; i <= yAxis.length; i++) {
@@ -266,19 +392,18 @@ class ViewPainter<E extends Enum> extends CustomPainter {
         );
       }
 
-      if (!layer.onlyRenderEvenYAxisText ||
-          (layer.onlyRenderEvenYAxisText && i.isEven)) {
+      if (!onlyRenderEvenYAxisText || (onlyRenderEvenYAxisText && i.isEven)) {
         late int value;
 
-        if (layer.reversedYAxis) {
+        if (reversedYAxis) {
           if (i == yAxis.length) {
-            value = layer.yAxisMinValue;
+            value = yAxisMinValue;
           } else {
-            value = yAxis[i] + layer.yAxisStep;
+            value = yAxis[i] + yAxisStep;
           }
         } else {
           if (i == yAxis.length) {
-            value = layer.yAxisMaxValue;
+            value = yAxisMaxValue;
           } else {
             value = yAxis[i];
           }
@@ -304,7 +429,7 @@ class ViewPainter<E extends Enum> extends CustomPainter {
   }) {
     TextSpan textSpan = TextSpan(
       text: text,
-      style: layer.axisTextStyle ??
+      style: axisTextStyle ??
           const TextStyle(
             fontSize: 11,
             color: Colors.black,

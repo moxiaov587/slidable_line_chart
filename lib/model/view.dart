@@ -20,6 +20,7 @@ class ViewStyle {
 
 class View<E extends Enum> {
   View({
+    required this.id,
     required this.type,
     required this.initialValue,
     this.width = 12,
@@ -36,6 +37,7 @@ class View<E extends Enum> {
     this.closeColor,
   }) : offset = Offset(0, initialValue);
 
+  final int id;
   final E type;
   final double initialValue;
   final double width;
@@ -193,6 +195,7 @@ class View<E extends Enum> {
     Color? closeColor,
   }) =>
       View<E>(
+        id: id,
         type: type,
         initialValue: initialValue ?? this.initialValue,
         width: width ?? this.width,
@@ -211,4 +214,44 @@ class View<E extends Enum> {
         checkColor: checkColor ?? this.checkColor,
         closeColor: closeColor ?? this.closeColor,
       );
+
+  @override
+  int get hashCode => Object.hash(
+        id,
+        type,
+        initialValue,
+        _currentValue,
+        width,
+        height,
+        zoomedFactor,
+        currentValueTextStyle,
+        currentValueMarginBottomValue,
+        checkOrCloseIconMarginTop,
+        checkOrCloseIconSize,
+        closeSize,
+        checkBackground,
+        closeBackground,
+        checkColor,
+        closeColor,
+      );
+
+  @override
+  bool operator ==(Object other) =>
+      other is View &&
+      other.id == id &&
+      other.type == type &&
+      other.initialValue == initialValue &&
+      other._currentValue == _currentValue &&
+      other.width == width &&
+      other.height == height &&
+      other.zoomedFactor == zoomedFactor &&
+      other.currentValueTextStyle == currentValueTextStyle &&
+      other.currentValueMarginBottomValue == currentValueMarginBottomValue &&
+      other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
+      other.checkOrCloseIconSize == checkOrCloseIconSize &&
+      other.closeSize == closeSize &&
+      other.checkBackground == checkBackground &&
+      other.closeBackground == closeBackground &&
+      other.checkColor == checkColor &&
+      other.closeColor == closeColor;
 }
