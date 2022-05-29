@@ -10,13 +10,21 @@ import 'model/layer.dart';
 import 'model/view.dart';
 import 'layer_painter.dart';
 
+typedef ViewsValueCallback = void Function(List<int> viewsValue);
+
 class FlutterLineChart<E extends Enum> extends StatefulWidget {
   const FlutterLineChart({
     Key? key,
     required this.layer,
+    this.onChange,
+    this.onChangeEnd,
   }) : super(key: key);
 
   final Layer<E> layer;
+
+  final ViewsValueCallback? onChange;
+
+  final ViewsValueCallback? onChangeEnd;
 
   @override
   State<FlutterLineChart<E>> createState() => _FlutterLineChartState<E>();
@@ -52,14 +60,15 @@ class _FlutterLineChartState<E extends Enum>
             if (currentSelectedView != null) {
               late double dy;
 
+              final double yStep = layer.getYAxisStepOffsetValue(chartHeight);
+
               if (layer.enforceStepOffset) {
                 dy = layer.getWithinRangeYAxisOffsetValue(
                   details.localPosition.dy,
                   chartHeight: chartHeight,
+                  yStep: yStep,
                   stepFactor: layer.yAxisStep,
                 );
-
-                final double yStep = layer.getYAxisStepOffsetValue(chartHeight);
 
                 final double realValue = layer.yAxisOffsetValue2RealValue(
                   dy,
@@ -76,6 +85,7 @@ class _FlutterLineChartState<E extends Enum>
                 dy = layer.getWithinRangeYAxisOffsetValue(
                   details.localPosition.dy,
                   chartHeight: chartHeight,
+                  yStep: yStep,
                 );
               }
 
@@ -84,11 +94,19 @@ class _FlutterLineChartState<E extends Enum>
                 dy,
               );
 
-              setState(() {});
+              layer.refresh();
+
+              if (layer.currentViewsValue != null) {
+                widget.onChange?.call(layer.currentViewsValue!);
+              }
             }
           },
           onPanEnd: (DragEndDetails details) {
             currentSelectedView = null;
+
+            if (layer.currentViewsValue != null) {
+              widget.onChangeEnd?.call(layer.currentViewsValue!);
+            }
           },
           child: CustomPaint(
             size: Size(chartWidth, chartHeight),

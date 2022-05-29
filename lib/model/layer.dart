@@ -6,9 +6,10 @@ import 'view.dart';
 /// 返回bool值渲染对应图标
 typedef DrawCheckOrClose = bool Function(double value);
 
-class Layer<E extends Enum> {
+class Layer<E extends Enum> extends ChangeNotifier {
   Layer({
     required this.viewTypeValues,
+    E? canDragViewType,
     required this.allViews,
     required this.xAxis,
     required this.yAxisStep,
@@ -29,15 +30,42 @@ class Layer<E extends Enum> {
     this.enforceStepOffset = false,
     this.showTapArea = false,
     this.drawCheckOrClose,
-  }) : yAxis = reversedYAxis
+  })  : _canDragViewType = canDragViewType ?? viewTypeValues.first,
+        yAxis = reversedYAxis
             ? List.generate((yAxisMaxValue - yAxisMinValue) ~/ yAxisStep,
                     (int index) => yAxisMinValue + index * yAxisStep)
                 .reversed
                 .toList()
             : List.generate((yAxisMaxValue - yAxisMinValue) ~/ yAxisStep,
-                (int index) => yAxisMinValue + index * yAxisStep).toList();
+                (int index) => yAxisMinValue + index * yAxisStep).toList(),
+        viewsGroup = viewTypeValues
+            .fold<List<List<View<E>>?>>(
+              <List<View<E>>?>[],
+              (previousValue, type) {
+                List<View<E>>? data =
+                    allViews.where((view) => view.type == type).toList();
+
+                if (data.isEmpty) {
+                  data = null;
+                }
+
+                return [
+                  ...previousValue,
+                  data,
+                ];
+              },
+            )
+            .whereType<List<View<E>>>()
+            .toList();
 
   final List<E> viewTypeValues;
+
+  E _canDragViewType;
+
+  set canDragViewType(E type) {
+    _canDragViewType = type;
+    notifyListeners();
+  }
 
   final Map<E, ViewStyle>? viewStyles;
 
@@ -103,33 +131,57 @@ class Layer<E extends Enum> {
 
   final DrawCheckOrClose? drawCheckOrClose;
 
-  List<List<View<E>>> get views => viewTypeValues
-      .fold<List<List<View<E>>?>>(
-        <List<View<E>>?>[],
-        (previousValue, type) {
-          List<View<E>>? data =
-              allViews.where((view) => view.type == type).toList();
+  final List<List<View<E>>> viewsGroup;
 
-          if (data.isEmpty) {
-            data = null;
-          }
+  bool get hasCanDragViews => canDragViews != null;
 
-          return [
-            ...previousValue,
-            data,
-          ];
-        },
-      )
-      .whereType<List<View<E>>>()
+  List<View<E>>? get canDragViews {
+    var data =
+        viewsGroup.where((views) => views.first.type == _canDragViewType);
+
+    if (data.isEmpty) {
+      return null;
+    }
+
+    return data.first;
+  }
+
+  List<List<View<E>>> get otherViews => viewsGroup
+      .where((views) => views.first.type != _canDragViewType)
       .toList();
 
-  bool get hasCanDragViews => views.first.first.canDrag;
+  List<int>? get currentViewsValue =>
+      canDragViews?.map((view) => view.currentValue.toInt()).toList();
 
-  List<View<E>> get canDragViews => views.first;
+  void refresh() => notifyListeners();
 
-  List<int>? get currentViewsValue => hasCanDragViews
-      ? canDragViews.map((view) => view.currentValue.abs().toInt()).toList()
-      : null;
+  void changeViewsValueByViewType(
+    E viewType, {
+    required List<double> values,
+  }) {
+    final int index =
+        viewsGroup.indexWhere((views) => views.first.type == viewType);
+
+    if (index != -1) {
+      if (values.length < viewsGroup[index].length) {
+        values = [
+          ...values,
+          ...List.generate(
+            viewsGroup[index].length - values.length,
+            (_) => viewsGroup[index].first.initialValue,
+          ),
+        ];
+      }
+
+      viewsGroup[index].forEachIndexed((i, view) {
+        viewsGroup[index][i] = view.copyWith(
+          initialValue: values[i],
+        );
+      });
+
+      notifyListeners();
+    }
+  }
 
   Offset adjustLocalPosition(
     Offset localPosition, {
@@ -146,6 +198,7 @@ class Layer<E extends Enum> {
   double getWithinRangeYAxisOffsetValue(
     double dy, {
     required double chartHeight,
+    required double yStep,
     int stepFactor = 1,
   }) =>
       ((dy - chartHeight) / stepFactor)
@@ -153,7 +206,8 @@ class Layer<E extends Enum> {
             (scaleHeight - chartHeight) / stepFactor,
             0,
           )
-          .floorToDouble();
+          .floorToDouble() +
+      yAxisMinValue * yStep;
 
   double realValue2YAxisOffsetValue(
     double value, {
@@ -172,11 +226,9 @@ class Layer<E extends Enum> {
   }) =>
       (reversedYAxis
               ? (yOffset / yStep + yAxisMaxValue)
-              : -(yOffset / yStep + yAxisMinValue))
+              : -(yOffset / yStep - yAxisMinValue))
           .roundToDouble();
 
-  View<E>? hintTestView(Offset position) => hasCanDragViews
-      ? canDragViews.reversed
-          .firstWhereOrNull((view) => view.hintTestView(position))
-      : null;
+  View<E>? hintTestView(Offset position) => canDragViews?.reversed
+      .firstWhereOrNull((view) => view.hintTestView(position));
 }

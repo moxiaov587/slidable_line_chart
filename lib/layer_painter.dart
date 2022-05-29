@@ -7,12 +7,12 @@ import 'model/layer.dart';
 import 'model/view.dart';
 
 class ViewPainter<E extends Enum> extends CustomPainter {
-  ViewPainter({required this.layer});
+  ViewPainter({required this.layer}) : super(repaint: layer);
 
   final Layer<E> layer;
 
   double get scaleHeight => layer.scaleHeight;
-  List<List<View<E>>> get views => layer.views;
+  List<List<View<E>>> get views => layer.viewsGroup;
 
   Color get defaultAxisPointColor =>
       layer.defaultAxisPointColor ?? Colors.blueGrey;
@@ -102,10 +102,7 @@ class ViewPainter<E extends Enum> extends CustomPainter {
       }
     }
 
-    List<List<View<E>>> otherViews =
-        layer.hasCanDragViews ? layer.views.sublist(1) : layer.views;
-
-    for (var views in otherViews.reversed) {
+    for (var views in layer.otherViews.reversed) {
       final ViewStyle? viewStyle =
           layer.getViewStyleByViewType(views.first.type);
 
@@ -122,12 +119,12 @@ class ViewPainter<E extends Enum> extends CustomPainter {
 
     if (layer.hasCanDragViews) {
       final ViewStyle? viewStyle =
-          layer.getViewStyleByViewType(layer.canDragViews.first.type);
+          layer.getViewStyleByViewType(layer.canDragViews!.first.type);
 
-      drawLinkLine(canvas, views: layer.canDragViews, viewStyle: viewStyle);
-      drawFillColor(canvas, views: layer.canDragViews, viewStyle: viewStyle);
+      drawLinkLine(canvas, views: layer.canDragViews!, viewStyle: viewStyle);
+      drawFillColor(canvas, views: layer.canDragViews!, viewStyle: viewStyle);
 
-      for (var view in layer.canDragViews) {
+      for (var view in layer.canDragViews!) {
         if (layer.showTapArea) {
           view.drawTapArea(canvas, tapAreaPaint);
         }

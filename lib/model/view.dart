@@ -176,4 +176,39 @@ class View<E extends Enum> {
       paint,
     );
   }
+
+  View<E> copyWith({
+    double? initialValue,
+    double? width,
+    double? height,
+    double? zoomedFactor,
+    TextStyle? currentValueTextStyle,
+    double? currentValueMarginBottomValue,
+    double? checkOrCloseIconMarginTop,
+    double? checkOrCloseIconSize,
+    double? closeSize,
+    Color? checkBackground,
+    Color? closeBackground,
+    Color? checkColor,
+    Color? closeColor,
+  }) =>
+      View<E>(
+        type: type,
+        initialValue: initialValue ?? this.initialValue,
+        width: width ?? this.width,
+        height: height ?? this.height,
+        zoomedFactor: zoomedFactor ?? this.zoomedFactor,
+        currentValueTextStyle:
+            currentValueTextStyle ?? this.currentValueTextStyle,
+        currentValueMarginBottomValue:
+            currentValueMarginBottomValue ?? this.currentValueMarginBottomValue,
+        checkOrCloseIconMarginTop:
+            checkOrCloseIconMarginTop ?? this.checkOrCloseIconMarginTop,
+        checkOrCloseIconSize: checkOrCloseIconSize ?? this.checkOrCloseIconSize,
+        closeSize: closeSize ?? this.closeSize,
+        checkBackground: checkBackground ?? this.checkBackground,
+        closeBackground: closeBackground ?? this.closeBackground,
+        checkColor: checkColor ?? this.checkColor,
+        closeColor: closeColor ?? this.closeColor,
+      );
 }
