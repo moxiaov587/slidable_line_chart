@@ -332,7 +332,7 @@ class _FlutterLineChartState<E extends Enum>
         final double chartHeight = constraints.maxHeight;
 
         return GestureDetector(
-          onPanStart: (DragStartDetails details) {
+          onVerticalDragDown: (DragDownDetails details) {
             _currentSelectedView = hintTestView(
               adjustLocalPosition(
                 details.localPosition,
@@ -344,7 +344,7 @@ class _FlutterLineChartState<E extends Enum>
               HapticFeedback.mediumImpact();
             }
           },
-          onPanUpdate: (DragUpdateDetails details) {
+          onVerticalDragUpdate: (DragUpdateDetails details) {
             if (_currentSelectedView != null) {
               late double dy;
 
@@ -390,7 +390,7 @@ class _FlutterLineChartState<E extends Enum>
               }
             }
           },
-          onPanEnd: (DragEndDetails details) {
+          onVerticalDragEnd: (DragEndDetails details) {
             widget.onChangeEndAllViewsCallback
                 ?.call(widget.allViews.map((view) => view).toList());
 
@@ -399,6 +399,9 @@ class _FlutterLineChartState<E extends Enum>
             if (currentViewsValue != null) {
               widget.onChangeEnd?.call(currentViewsValue!);
             }
+          },
+          onVerticalDragCancel: () {
+            _currentSelectedView = null;
           },
           child: CustomPaint(
             size: Size(chartWidth, chartHeight),
