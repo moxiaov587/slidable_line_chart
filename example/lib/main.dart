@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:flutter_line_chart/flutter_line_chart.dart';
+import 'package:slidable_line_chart/slidable_line_chart.dart';
 
 void main() {
   runApp(const MyApp());
@@ -104,7 +104,7 @@ class _MyAppState extends State<MyApp> {
                 right: 10,
               ),
               child: Center(
-                child: FlutterLineChart(
+                child: SlidableLineChart(
                   canDragCoordinateType: canDragCoordinateType,
                   allCoordinates: allCoordinates,
                   reversedYAxis: reversedYAxis,

@@ -6,5 +6,5 @@ Show a line chart and change it.
 
 ## Usage
 ```dart
-import 'package:flutter_line_chart/flutter_line_chart.dart';
+import 'package:slidable_line_chart/slidable_line_chart.dart';
 ```

@@ -1,6 +1,6 @@
-# flutter_line_chart_example
+# slidable_line_chart_example
 
-Demonstrates how to use the flutter_line_chart plugin.
+Demonstrates how to use the slidable_line_chart plugin.
 
 ## Getting Started
 

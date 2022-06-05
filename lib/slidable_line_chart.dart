@@ -1,4 +1,4 @@
-library flutter_line_chart;
+library slidable_line_chart;
 
 export 'model/coordinate.dart';
 
@@ -14,8 +14,8 @@ import 'coordinate_system_painter.dart';
 typedef CanDragCoordinatesValueCallback = void Function(
     List<double> canDragCoordinatesValue);
 
-class FlutterLineChart<Enum> extends StatefulWidget {
-  const FlutterLineChart({
+class SlidableLineChart<Enum> extends StatefulWidget {
+  const SlidableLineChart({
     Key? key,
     this.canDragCoordinateType,
     required this.allCoordinates,
@@ -112,10 +112,11 @@ class FlutterLineChart<Enum> extends StatefulWidget {
   final CanDragCoordinatesValueCallback? onChangeEnd;
 
   @override
-  State<FlutterLineChart<Enum>> createState() => _FlutterLineChartState<Enum>();
+  State<SlidableLineChart<Enum>> createState() =>
+      _SlidableLineChartState<Enum>();
 }
 
-class _FlutterLineChartState<Enum> extends State<FlutterLineChart<Enum>> {
+class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
   CoordinateStyle? getCoordinateStyleByType(Enum type) =>
       widget.coordinateStyles?[type];
 
@@ -278,7 +279,7 @@ class _FlutterLineChartState<Enum> extends State<FlutterLineChart<Enum>> {
   }
 
   @override
-  void didUpdateWidget(covariant FlutterLineChart<Enum> oldWidget) {
+  void didUpdateWidget(covariant SlidableLineChart<Enum> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     bool markRebuild = false;
