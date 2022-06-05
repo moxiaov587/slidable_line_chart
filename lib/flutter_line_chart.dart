@@ -1,58 +1,57 @@
 library flutter_line_chart;
 
-export 'model/view.dart';
+export 'model/coordinate.dart';
 
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'model/view.dart';
-import 'layer_painter.dart';
+import 'model/coordinate.dart';
+import 'coordinate_system_painter.dart';
 
-typedef ViewsValueCallback = void Function(List<double> viewsValue);
+typedef CanDragCoordinatesValueCallback = void Function(
+    List<double> canDragCoordinatesValue);
 
-typedef AllViewsCallback<E extends Enum> = void Function(
-    List<View<E>> currentViews);
-
-class FlutterLineChart<E extends Enum> extends StatefulWidget {
+class FlutterLineChart<Enum> extends StatefulWidget {
   const FlutterLineChart({
     Key? key,
-    required this.viewTypeValues,
-    this.canDragViewType,
-    required this.allViews,
+    this.canDragCoordinateType,
+    required this.allCoordinates,
     required this.xAxis,
-    required this.yAxisStep,
+    required this.yAxisDivisions,
     required this.yAxisMaxValue,
     required this.yAxisMinValue,
-    this.onChangeAllViewsCallback,
-    this.onChangeEndAllViewsCallback,
     this.reversedYAxis = false,
     this.onlyRenderEvenYAxisText = true,
-    this.scaleHeight = 8.0,
+    this.marginLeftBottom = 8.0,
     this.linkLineWidth = 2.0,
     this.axisTextStyle,
-    this.axisColor,
-    this.gridColor,
-    this.defaultAxisPointColor,
+    this.axisLineColor,
+    this.gridLineColor,
+    this.defaultCoordinatePointColor,
     this.defaultLinkLineColor,
     this.defaultFillAreaColor,
-    this.viewStyles,
+    this.coordinateStyles,
     this.tapAreaColor,
     this.enforceStepOffset = false,
     this.showTapArea = false,
     this.drawCheckOrClose,
     this.onChange,
     this.onChangeEnd,
-  }) : super(key: key);
+  })  : assert(yAxisMaxValue > yAxisMinValue,
+            'yAxisMaxValue($yAxisMaxValue) must be larger than yAxisMinValue($yAxisMinValue)'),
+        assert(yAxisDivisions > 0,
+            'yAxisDivisions($yAxisDivisions) must be larger than 0'),
+        super(key: key);
 
-  final List<E> viewTypeValues;
+  final Enum? canDragCoordinateType;
 
-  final E? canDragViewType;
-
-  final Map<E, ViewStyle>? viewStyles;
+  final Map<Enum, CoordinateStyle>? coordinateStyles;
 
   /// 点集
-  final List<View<E>> allViews;
+  final List<Coordinate<Enum>> allCoordinates;
 
   /// X轴值
   final List<String> xAxis;
@@ -64,11 +63,7 @@ class FlutterLineChart<E extends Enum> extends StatefulWidget {
   final int yAxisMaxValue;
 
   /// Y轴分隔值
-  final int yAxisStep;
-
-  final AllViewsCallback<E>? onChangeAllViewsCallback;
-
-  final AllViewsCallback<E>? onChangeEndAllViewsCallback;
+  final int yAxisDivisions;
 
   /// 反转Y轴
   final bool reversedYAxis;
@@ -76,8 +71,8 @@ class FlutterLineChart<E extends Enum> extends StatefulWidget {
   /// 只渲染偶数项的Y轴文本
   final bool onlyRenderEvenYAxisText;
 
-  /// 刻度高度
-  final double scaleHeight;
+  /// 左下边距
+  final double marginLeftBottom;
 
   /// 连接线的宽度
   final double linkLineWidth;
@@ -86,13 +81,13 @@ class FlutterLineChart<E extends Enum> extends StatefulWidget {
   final TextStyle? axisTextStyle;
 
   /// 坐标轴颜色
-  final Color? axisColor;
+  final Color? axisLineColor;
 
   /// 坐标系网格颜色
-  final Color? gridColor;
+  final Color? gridLineColor;
 
   /// 坐标点颜色
-  final Color? defaultAxisPointColor;
+  final Color? defaultCoordinatePointColor;
 
   /// 连接线颜色
   final Color? defaultLinkLineColor;
@@ -112,214 +107,239 @@ class FlutterLineChart<E extends Enum> extends StatefulWidget {
 
   final DrawCheckOrClose? drawCheckOrClose;
 
-  final ViewsValueCallback? onChange;
+  final CanDragCoordinatesValueCallback? onChange;
 
-  final ViewsValueCallback? onChangeEnd;
+  final CanDragCoordinatesValueCallback? onChangeEnd;
 
   @override
-  State<FlutterLineChart<E>> createState() => _FlutterLineChartState<E>();
+  State<FlutterLineChart<Enum>> createState() => _FlutterLineChartState<Enum>();
 }
 
-class _FlutterLineChartState<E extends Enum>
-    extends State<FlutterLineChart<E>> {
-  ViewStyle? getViewStyleByViewType(E type) => widget.viewStyles?[type];
+class _FlutterLineChartState<Enum> extends State<FlutterLineChart<Enum>> {
+  CoordinateStyle? getCoordinateStyleByType(Enum type) =>
+      widget.coordinateStyles?[type];
 
-  View<E>? _currentSelectedView;
+  Coordinate<Enum>? _currentSelectedCoordinate;
 
-  bool get hasCanDragViews => canDragViews != null;
+  bool get hasCanDragCoordinates => canDragCoordinates != null;
 
-  List<View<E>>? get canDragViews {
-    var data =
-        viewsGroup.where((views) => views.first.type == _canDragViewType);
-
-    if (data.isEmpty) {
+  List<Coordinate<Enum>>? get canDragCoordinates {
+    if (widget.canDragCoordinateType == null) {
       return null;
     }
 
-    return data.first;
+    return coordinatesGroup.firstWhereOrNull((coordinates) =>
+        coordinates.first.type == widget.canDragCoordinateType);
   }
 
-  List<List<View<E>>> get otherViewsGroup => viewsGroup
-      .where((views) => views.first.type != _canDragViewType)
+  List<List<Coordinate<Enum>>> get otherCoordinatesGroup => coordinatesGroup
+      .where((coordinates) =>
+          coordinates.first.type != widget.canDragCoordinateType)
       .toList();
 
-  List<double>? get currentViewsValue =>
-      canDragViews?.map((view) => view.currentValue).toList();
+  List<double>? get currentCanDragCoordinatesValue =>
+      canDragCoordinates?.map((coordinate) => coordinate.currentValue).toList();
 
+  /// 反向平移[dx]以抵消[CoordinateSystemPainter]中[canvas]的平移
+  double _reverseTranslateX(double dx) => dx - widget.marginLeftBottom;
+
+  /// 反向平移[dy]以抵消[CoordinateSystemPainter]中[canvas]的平移
+  double _reverseTranslateY(
+    double dy, {
+    required double chartHeight,
+  }) =>
+      dy - chartHeight + widget.marginLeftBottom;
+
+  /// 调整[localPosition]
   Offset adjustLocalPosition(
     Offset localPosition, {
     required double chartHeight,
   }) =>
-      localPosition.translate(-widget.scaleHeight, -chartHeight);
+      Offset(
+        _reverseTranslateX(localPosition.dx),
+        _reverseTranslateY(
+          localPosition.dy,
+          chartHeight: chartHeight,
+        ),
+      );
 
-  double getXAxisStepOffsetValue(double chartWidth) =>
-      (chartWidth - widget.scaleHeight) / widget.xAxis.length;
+  /// 获取X轴均分后的偏移值
+  double getXAxisScaleOffsetValue(double chartWidth) =>
+      (chartWidth - widget.marginLeftBottom) / widget.xAxis.length;
 
-  double getYAxisStepOffsetValue(double chartHeight) =>
-      (chartHeight - widget.scaleHeight) /
+  /// 获取Y轴均分后的偏移值
+  double getYAxisScaleOffsetValue(double chartHeight) =>
+      (chartHeight - widget.marginLeftBottom) /
       (widget.yAxisMaxValue - widget.yAxisMinValue);
 
-  double getWithinRangeYAxisOffsetValue(
+  /// 获取拖动范围内的Y轴偏移值
+  double getYAxisOffsetValueWithinDragRange(
     double dy, {
     required double chartHeight,
-    required double yStep,
-    int stepFactor = 1,
-  }) =>
-      ((dy - chartHeight) / stepFactor)
-          .clamp(
-            (widget.scaleHeight - chartHeight) / stepFactor,
-            0,
-          )
-          .floorToDouble() +
-      widget.yAxisMinValue * yStep;
+    required double yAxisScaleOffsetValue,
+    int yAxisDivisions = 1,
+  }) {
+    double offset =
+        (_reverseTranslateY(dy, chartHeight: chartHeight) / yAxisDivisions)
+            .clamp(
+              _reverseTranslateY(0, chartHeight: chartHeight) / yAxisDivisions,
+              0,
+            )
+            .floorToDouble();
 
-  double realValue2YAxisOffsetValue(
-    double value, {
+    if (widget.enforceStepOffset) {
+      if (widget.reversedYAxis) {
+        offset -= widget.yAxisMinValue * yAxisScaleOffsetValue;
+      } else {
+        offset += widget.yAxisMinValue * yAxisScaleOffsetValue;
+      }
+    }
+
+    return offset;
+  }
+
+  double currentValue2YAxisOffsetValue(
+    double currentValue, {
     required double chartHeight,
-    required double yStep,
-    int stepFactor = 1,
+    required double yAxisScaleOffsetValue,
+    int yAxisDivisions = 1,
   }) =>
       (widget.reversedYAxis
-          ? -(chartHeight - widget.scaleHeight - value * yStep)
-          : -value * yStep) *
-      stepFactor;
+          ? _reverseTranslateY(
+              currentValue * yAxisScaleOffsetValue,
+              chartHeight: chartHeight,
+            )
+          : -currentValue * yAxisScaleOffsetValue) *
+      yAxisDivisions;
 
-  double yAxisOffsetValue2RealValue(
+  double yAxisOffsetValue2CurrentValue(
     double yOffset, {
-    required double yStep,
+    required double yAxisScaleOffsetValue,
   }) =>
       (widget.reversedYAxis
-              ? (yOffset / yStep + widget.yAxisMaxValue)
-              : -(yOffset / yStep - widget.yAxisMinValue))
+              ? yOffset / yAxisScaleOffsetValue + widget.yAxisMaxValue
+              : widget.yAxisMinValue - yOffset / yAxisScaleOffsetValue)
           .roundToDouble();
 
-  View<E>? hintTestView(Offset position) => canDragViews?.reversed
-      .firstWhereOrNull((view) => view.hintTestView(position));
-
-  late E _canDragViewType;
+  Coordinate<Enum>? hintTestCoordinate(Offset position) => canDragCoordinates
+      ?.firstWhereOrNull((coordinate) => coordinate.hintTest(position));
 
   /// Y轴值
   late List<int> yAxis;
 
-  late List<List<View<E>>> viewsGroup;
+  late List<List<Coordinate<Enum>>> coordinatesGroup;
+
+  bool _allCoordinatesOffsetsUninitialized = true;
+
+  void resetAllCoordinatesOffsetsInitializedStatus() {
+    _allCoordinatesOffsetsUninitialized = true;
+  }
+
+  void allCoordinatesOffsetsInitializationCompleted() {
+    _allCoordinatesOffsetsUninitialized = false;
+  }
+
+  void _initialYAxis() {
+    yAxis = List.generate(
+        (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisDivisions,
+        (int index) =>
+            widget.yAxisMinValue + index * widget.yAxisDivisions).toList();
+
+    if (widget.reversedYAxis) {
+      yAxis = yAxis.reversed.toList();
+    }
+  }
+
+  void _initialCoordinatesGroup() {
+    coordinatesGroup = widget.allCoordinates
+        .fold<Map<Enum, List<Coordinate<Enum>>>>(
+          <Enum, List<Coordinate<Enum>>>{},
+          (previousValue, coordinate) {
+            if (previousValue.containsKey(coordinate.type)) {
+              previousValue[coordinate.type]!.add(coordinate);
+            } else {
+              previousValue[coordinate.type] = [coordinate];
+            }
+
+            return previousValue;
+          },
+        )
+        .values
+        .toList();
+  }
 
   @override
   void initState() {
     super.initState();
 
-    _canDragViewType = widget.canDragViewType ?? widget.viewTypeValues.first;
-    yAxis = widget.reversedYAxis
-        ? List.generate(
-            (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisStep,
-            (int index) =>
-                widget.yAxisMinValue +
-                index * widget.yAxisStep).reversed.toList()
-        : List.generate(
-            (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisStep,
-            (int index) =>
-                widget.yAxisMinValue + index * widget.yAxisStep).toList();
-    viewsGroup = widget.viewTypeValues
-        .fold<List<List<View<E>>?>>(
-          <List<View<E>>?>[],
-          (previousValue, type) {
-            List<View<E>>? data =
-                widget.allViews.where((view) => view.type == type).toList();
+    _initialYAxis();
 
-            if (data.isEmpty) {
-              data = null;
-            }
-
-            return [
-              ...previousValue,
-              data,
-            ];
-          },
-        )
-        .whereType<List<View<E>>>()
-        .toList();
+    _initialCoordinatesGroup();
   }
 
   @override
-  void didUpdateWidget(covariant FlutterLineChart<E> oldWidget) {
+  void didUpdateWidget(covariant FlutterLineChart<Enum> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    bool needRebuild = false;
+    bool markRebuild = false;
 
-    if (oldWidget.canDragViewType != widget.canDragViewType) {
-      _canDragViewType = widget.canDragViewType ?? widget.viewTypeValues.first;
-
-      needRebuild = true;
+    if (oldWidget.canDragCoordinateType != widget.canDragCoordinateType) {
+      markRebuild = true;
     }
 
     if (oldWidget.reversedYAxis != widget.reversedYAxis ||
         oldWidget.yAxisMaxValue != widget.yAxisMaxValue ||
         oldWidget.yAxisMinValue != widget.yAxisMinValue ||
-        oldWidget.yAxisStep != widget.yAxisStep) {
-      yAxis = widget.reversedYAxis
-          ? List.generate(
-              (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisStep,
-              (int index) =>
-                  widget.yAxisMinValue +
-                  index * widget.yAxisStep).reversed.toList()
-          : List.generate(
-              (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisStep,
-              (int index) =>
-                  widget.yAxisMinValue + index * widget.yAxisStep).toList();
+        oldWidget.yAxisDivisions != widget.yAxisDivisions) {
+      _initialYAxis();
 
-      needRebuild = true;
+      markRebuild = true;
     }
 
-    if (oldWidget.viewTypeValues.map((type) => type.hashCode).join() !=
-            widget.viewTypeValues.map((type) => type.hashCode).join() ||
-        oldWidget.allViews.map((views) => views.hashCode).join() !=
-            widget.allViews.map((views) => views.hashCode).join()) {
-      viewsGroup = widget.viewTypeValues
-          .fold<List<List<View<E>>?>>(
-            <List<View<E>>?>[],
-            (previousValue, type) {
-              List<View<E>>? data =
-                  widget.allViews.where((view) => view.type == type).toList();
+    if (oldWidget.allCoordinates
+            .map((coordinates) => coordinates.hashCode)
+            .join() !=
+        widget.allCoordinates
+            .map((coordinates) => coordinates.hashCode)
+            .join()) {
+      _initialCoordinatesGroup();
 
-              if (data.isEmpty) {
-                data = null;
-              }
+      resetAllCoordinatesOffsetsInitializedStatus();
 
-              return [
-                ...previousValue,
-                data,
-              ];
-            },
-          )
-          .whereType<List<View<E>>>()
-          .toList();
-
-      needRebuild = true;
+      markRebuild = true;
     }
 
     if (oldWidget.reversedYAxis != widget.reversedYAxis ||
-        oldWidget.onlyRenderEvenYAxisText != widget.onlyRenderEvenYAxisText ||
-        oldWidget.scaleHeight != widget.scaleHeight ||
+        oldWidget.marginLeftBottom != widget.marginLeftBottom) {
+      resetAllCoordinatesOffsetsInitializedStatus();
+
+      markRebuild = true;
+    }
+
+    if (oldWidget.onlyRenderEvenYAxisText != widget.onlyRenderEvenYAxisText ||
         oldWidget.linkLineWidth != widget.linkLineWidth ||
         oldWidget.axisTextStyle != widget.axisTextStyle ||
-        oldWidget.axisColor != widget.axisColor ||
-        oldWidget.gridColor != widget.gridColor ||
-        oldWidget.defaultAxisPointColor != widget.defaultAxisPointColor ||
+        oldWidget.axisLineColor != widget.axisLineColor ||
+        oldWidget.gridLineColor != widget.gridLineColor ||
+        oldWidget.defaultCoordinatePointColor !=
+            widget.defaultCoordinatePointColor ||
         oldWidget.defaultLinkLineColor != widget.defaultLinkLineColor ||
         oldWidget.defaultFillAreaColor != widget.defaultFillAreaColor ||
-        oldWidget.viewStyles.hashCode != widget.viewStyles.hashCode ||
+        oldWidget.coordinateStyles.hashCode !=
+            widget.coordinateStyles.hashCode ||
         oldWidget.tapAreaColor != widget.tapAreaColor ||
         oldWidget.enforceStepOffset != widget.enforceStepOffset ||
         oldWidget.showTapArea != widget.showTapArea) {
-      needRebuild = true;
+      markRebuild = true;
     }
 
-    if (_currentSelectedView != null &&
-        !widget.allViews.contains(_currentSelectedView)) {
-      _currentSelectedView = widget.allViews
-          .firstWhereOrNull((view) => view.id == _currentSelectedView!.id);
+    if (_currentSelectedCoordinate != null &&
+        !widget.allCoordinates.contains(_currentSelectedCoordinate)) {
+      _currentSelectedCoordinate = widget.allCoordinates.firstWhereOrNull(
+          (coordinate) => coordinate.id == _currentSelectedCoordinate!.id);
     }
 
-    if (needRebuild) {
+    if (markRebuild) {
       setState(() {});
     }
   }
@@ -333,109 +353,119 @@ class _FlutterLineChartState<E extends Enum>
 
         return GestureDetector(
           onVerticalDragDown: (DragDownDetails details) {
-            _currentSelectedView = hintTestView(
+            _currentSelectedCoordinate = hintTestCoordinate(
               adjustLocalPosition(
                 details.localPosition,
                 chartHeight: chartHeight,
               ),
             );
 
-            if (_currentSelectedView != null) {
+            if (_currentSelectedCoordinate != null) {
               HapticFeedback.mediumImpact();
             }
           },
+          onVerticalDragStart: (DragStartDetails details) {
+            _currentSelectedCoordinate ??= hintTestCoordinate(
+              adjustLocalPosition(
+                details.localPosition,
+                chartHeight: chartHeight,
+              ),
+            );
+          },
           onVerticalDragUpdate: (DragUpdateDetails details) {
-            if (_currentSelectedView != null) {
+            if (_currentSelectedCoordinate != null) {
               late double dy;
 
-              final double yStep = getYAxisStepOffsetValue(chartHeight);
+              final double yAxisScaleOffsetValue =
+                  getYAxisScaleOffsetValue(chartHeight);
 
               if (widget.enforceStepOffset) {
-                dy = getWithinRangeYAxisOffsetValue(
+                dy = getYAxisOffsetValueWithinDragRange(
                   details.localPosition.dy,
                   chartHeight: chartHeight,
-                  yStep: yStep,
-                  stepFactor: widget.yAxisStep,
+                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
+                  yAxisDivisions: widget.yAxisDivisions,
                 );
 
-                final double realValue = yAxisOffsetValue2RealValue(
+                final double currentValue = yAxisOffsetValue2CurrentValue(
                   dy,
-                  yStep: yStep,
+                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
                 );
 
-                dy = realValue2YAxisOffsetValue(
-                  realValue,
+                dy = currentValue2YAxisOffsetValue(
+                  currentValue,
                   chartHeight: chartHeight,
-                  yStep: yStep,
-                  stepFactor: widget.yAxisStep,
+                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
+                  yAxisDivisions: widget.yAxisDivisions,
                 );
               } else {
-                dy = getWithinRangeYAxisOffsetValue(
+                dy = getYAxisOffsetValueWithinDragRange(
                   details.localPosition.dy,
                   chartHeight: chartHeight,
-                  yStep: yStep,
+                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
                 );
               }
 
-              _currentSelectedView!.offset = Offset(
-                _currentSelectedView!.offset.dx,
+              _currentSelectedCoordinate!.offset = Offset(
+                _currentSelectedCoordinate!.offset.dx,
                 dy,
               );
 
-              widget.onChangeAllViewsCallback
-                  ?.call(widget.allViews.map<View<E>>((view) => view).toList());
+              setState(() {});
 
-              if (currentViewsValue != null) {
-                widget.onChange?.call(currentViewsValue!);
+              if (currentCanDragCoordinatesValue != null) {
+                widget.onChange?.call(currentCanDragCoordinatesValue!);
               }
             }
           },
           onVerticalDragEnd: (DragEndDetails details) {
-            widget.onChangeEndAllViewsCallback
-                ?.call(widget.allViews.map((view) => view).toList());
+            _currentSelectedCoordinate = null;
 
-            _currentSelectedView = null;
-
-            if (currentViewsValue != null) {
-              widget.onChangeEnd?.call(currentViewsValue!);
+            if (currentCanDragCoordinatesValue != null) {
+              widget.onChangeEnd?.call(currentCanDragCoordinatesValue!);
             }
           },
           onVerticalDragCancel: () {
-            _currentSelectedView = null;
+            _currentSelectedCoordinate = null;
           },
           child: CustomPaint(
             size: Size(chartWidth, chartHeight),
-            painter: ViewPainter<E>(
-              viewsGroup: viewsGroup,
-              otherViewsGroup: otherViewsGroup,
-              hasCanDragViews: hasCanDragViews,
-              canDragViews: canDragViews,
+            painter: CoordinateSystemPainter<Enum>(
+              coordinatesGroup: coordinatesGroup,
+              allCoordinatesOffsetsUninitialized:
+                  _allCoordinatesOffsetsUninitialized,
+              otherCoordinatesGroup: otherCoordinatesGroup,
+              hasCanDragCoordinates: hasCanDragCoordinates,
+              canDragCoordinates: canDragCoordinates,
               xAxis: widget.xAxis,
               yAxis: yAxis,
-              yAxisStep: widget.yAxisStep,
+              yAxisDivisions: widget.yAxisDivisions,
               yAxisMaxValue: widget.yAxisMaxValue,
               yAxisMinValue: widget.yAxisMinValue,
               reversedYAxis: widget.reversedYAxis,
               onlyRenderEvenYAxisText: widget.onlyRenderEvenYAxisText,
-              scaleHeight: widget.scaleHeight,
+              marginLeftBottom: widget.marginLeftBottom,
               linkLineWidth: widget.linkLineWidth,
               axisTextStyle: widget.axisTextStyle,
-              axisColor: widget.axisColor,
-              gridColor: widget.gridColor,
-              defaultAxisPointColor: widget.defaultAxisPointColor,
+              axisLineColor: widget.axisLineColor,
+              gridLineColor: widget.gridLineColor,
+              defaultAxisPointColor: widget.defaultCoordinatePointColor,
               defaultLinkLineColor: widget.defaultLinkLineColor,
               defaultFillAreaColor: widget.defaultFillAreaColor,
               tapAreaColor: widget.tapAreaColor,
               enforceStepOffset: widget.enforceStepOffset,
               showTapArea: widget.showTapArea,
               drawCheckOrClose: widget.drawCheckOrClose,
-              getViewStyleByViewType: getViewStyleByViewType,
+              allCoordinatesOffsetsInitializationCompleted:
+                  allCoordinatesOffsetsInitializationCompleted,
+              getCoordinateStyleByType: getCoordinateStyleByType,
               adjustLocalPosition: adjustLocalPosition,
-              getXAxisStepOffsetValue: getXAxisStepOffsetValue,
-              getYAxisStepOffsetValue: getYAxisStepOffsetValue,
-              getWithinRangeYAxisOffsetValue: getWithinRangeYAxisOffsetValue,
-              realValue2YAxisOffsetValue: realValue2YAxisOffsetValue,
-              yAxisOffsetValue2RealValue: yAxisOffsetValue2RealValue,
+              getXAxisScaleOffsetValue: getXAxisScaleOffsetValue,
+              getYAxisScaleOffsetValue: getYAxisScaleOffsetValue,
+              getYAxisOffsetValueWithinDragRange:
+                  getYAxisOffsetValueWithinDragRange,
+              currentValue2YAxisOffsetValue: currentValue2YAxisOffsetValue,
+              yAxisOffsetValue2CurrentValue: yAxisOffsetValue2CurrentValue,
             ),
           ),
         );

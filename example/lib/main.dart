@@ -6,10 +6,40 @@ void main() {
   runApp(const MyApp());
 }
 
-enum ViewType {
-  // all,
+enum CoordinateType {
   left,
   right,
+}
+
+class TestData {
+  TestData({
+    required this.yAxisMaxValue,
+    required this.yAxisMinValue,
+    required this.yAxisDivisions,
+  }) : data = List<int>.generate(12, (index) => index)
+            .fold<List<Coordinate<CoordinateType>>>([], (previousValue, index) {
+          late Coordinate<CoordinateType> coordinate;
+          if (previousValue.isEmpty) {
+            coordinate = Coordinate<CoordinateType>(
+              id: index,
+              type: CoordinateType.left,
+              initialValue: yAxisMinValue.toDouble(),
+            );
+          } else {
+            coordinate = Coordinate<CoordinateType>(
+              id: index,
+              type: index >= 6 ? CoordinateType.right : CoordinateType.left,
+              initialValue: previousValue.last.initialValue + yAxisDivisions,
+            );
+          }
+
+          return [...previousValue, coordinate];
+        });
+
+  final List<Coordinate<CoordinateType>> data;
+  final int yAxisMaxValue;
+  final int yAxisMinValue;
+  final int yAxisDivisions;
 }
 
 class MyApp extends StatefulWidget {
@@ -20,14 +50,40 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  List<View<ViewType>> allViews = [
-    View<ViewType>(id: 1, type: ViewType.left, initialValue: -12),
-    View<ViewType>(id: 2, type: ViewType.left, initialValue: -14),
-    View<ViewType>(id: 3, type: ViewType.left, initialValue: -16),
-    View<ViewType>(id: 4, type: ViewType.left, initialValue: -18),
-    View<ViewType>(id: 5, type: ViewType.left, initialValue: -20),
-    View<ViewType>(id: 6, type: ViewType.left, initialValue: -22),
+  final List<TestData> testData = [
+    TestData(
+      yAxisMaxValue: -12,
+      yAxisMinValue: -24,
+      yAxisDivisions: 1,
+    ),
+    TestData(
+      yAxisMaxValue: 0,
+      yAxisMinValue: -12,
+      yAxisDivisions: 1,
+    ),
+    TestData(
+      yAxisMaxValue: 120,
+      yAxisMinValue: 0,
+      yAxisDivisions: 10,
+    ),
+    TestData(
+      yAxisMaxValue: 120,
+      yAxisMinValue: 20,
+      yAxisDivisions: 5,
+    ),
   ];
+
+  int index = 3;
+
+  List<Coordinate<CoordinateType>> get allCoordinates => testData[index].data;
+
+  int get yAxisMaxValue => testData[index].yAxisMaxValue;
+  int get yAxisMinValue => testData[index].yAxisMinValue;
+  int get yAxisDivisions => testData[index].yAxisDivisions;
+
+  CoordinateType? canDragCoordinateType = CoordinateType.left;
+
+  bool reversedYAxis = false;
 
   String? result;
 
@@ -49,74 +105,118 @@ class _MyAppState extends State<MyApp> {
               ),
               child: Center(
                 child: FlutterLineChart(
-                  viewTypeValues: ViewType.values,
-                  // canDragViewType: ViewType.right,
-                  allViews: allViews,
-                  xAxis: const ['500', '1k', '2k', '4k', '6k', '8k'],
-                  yAxisStep: 1,
-                  yAxisMaxValue: -12,
-                  yAxisMinValue: -24,
+                  canDragCoordinateType: canDragCoordinateType,
+                  allCoordinates: allCoordinates,
+                  reversedYAxis: reversedYAxis,
+                  xAxis: const <String>['500', '1k', '2k', '4k', '6k', '8k'],
+                  yAxisDivisions: yAxisDivisions,
+                  yAxisMaxValue: yAxisMaxValue,
+                  yAxisMinValue: yAxisMinValue,
                   drawCheckOrClose: (double value) {
                     return value >= 30;
                   },
                   showTapArea: true,
                   enforceStepOffset: true,
-                  viewStyles: {
-                    ViewType.left: ViewStyle(
-                      axisPointColor: Colors.red,
+                  coordinateStyles: {
+                    CoordinateType.left: CoordinateStyle(
+                      coordinatePointColor: Colors.red,
                       linkLineColor: Colors.redAccent,
                       fillAreaColor: Colors.red.withOpacity(.3),
                     )
-                  },
-                  onChangeAllViewsCallback:
-                      (List<View<ViewType>> currentViews) {
-                    setState(() {
-                      allViews = currentViews;
-                    });
-                  },
-                  onChangeEndAllViewsCallback:
-                      (List<View<ViewType>> currentViews) {
-                    setState(() {
-                      allViews = currentViews;
-                    });
                   },
                 ),
               ),
             ),
             Container(
-              margin: const EdgeInsets.only(top: 50),
+              margin: const EdgeInsets.only(
+                top: 50,
+                bottom: 30,
+              ),
               child: Text(
                 result ?? '点击按钮获取当前数据',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
             ),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 20,
+              runSpacing: 10,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    switch (canDragCoordinateType) {
+                      case null:
+                        setState(() {
+                          canDragCoordinateType = CoordinateType.left;
+                        });
+                        break;
+                      case CoordinateType.left:
+                        setState(() {
+                          canDragCoordinateType = CoordinateType.right;
+                        });
+                        break;
+                      case CoordinateType.right:
+                        setState(() {
+                          canDragCoordinateType = null;
+                        });
+                        break;
+                    }
+                  },
+                  child: Text(
+                    '切换可拖动类型',
+                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() => reversedYAxis = !reversedYAxis);
+                  },
+                  child: Text(
+                    '反向Y轴',
+                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    int data = index + 1;
+
+                    data = data == testData.length ? 1 : data;
+                    setState(() => index = data);
+                  },
+                  child: Text(
+                    '切换数据源',
+                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (canDragCoordinateType == null) {
+                      setState(() => result = '当前没有可拖动的Coordinate');
+                    } else {
+                      setState(() => result = testData[index]
+                          .data
+                          .where((coordinate) =>
+                              coordinate.type == canDragCoordinateType)
+                          .map((coordinate) => coordinate.currentValue)
+                          .join(','));
+                    }
+                  },
+                  child: Text(
+                    '获取当前数据',
+                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                ),
+              ],
+            )
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            // setState(() {
-            //   if (layer.currentViewsValue == null) {
-            //     result = '当前没有有效的可拖动[View]';
-            //   } else {
-            //     result = layer.currentViewsValue!.join(', ');
-            //   }
-            // });
-
-            // layer.canDragViewType = ViewType.right;
-
-            // layer.changeViewsValueByViewType(
-            //   ViewType.left,
-            //   values: [
-            //     50,
-            //     60,
-            //     70,
-            //     80,
-            //     90,
-            //     100,
-            //   ],
-            // );
-          },
-          child: const Icon(Icons.save),
         ),
       ),
     );

@@ -1,15 +1,14 @@
-import 'package:flutter/material.dart' show Colors;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
-class ViewStyle {
-  ViewStyle({
-    this.axisPointColor,
+class CoordinateStyle {
+  CoordinateStyle({
+    this.coordinatePointColor,
     this.linkLineColor,
     this.fillAreaColor,
   });
 
   /// 坐标点颜色
-  final Color? axisPointColor;
+  final Color? coordinatePointColor;
 
   /// 连接线颜色
   final Color? linkLineColor;
@@ -18,16 +17,16 @@ class ViewStyle {
   final Color? fillAreaColor;
 }
 
-class View<E extends Enum> {
-  View({
+class Coordinate<Enum> {
+  Coordinate({
     required this.id,
     required this.type,
     required this.initialValue,
-    this.width = 12,
-    this.height = 12,
+    this.width = 12.0,
+    this.height = 12.0,
     this.zoomedFactor = 3.0,
     this.currentValueTextStyle,
-    this.currentValueMarginBottomValue = 10.0,
+    this.currentValueMarginBottom = 10.0,
     this.checkOrCloseIconMarginTop = 30.0,
     this.checkOrCloseIconSize = 10.0,
     this.closeSize = 4.0,
@@ -38,7 +37,7 @@ class View<E extends Enum> {
   }) : offset = Offset(0, initialValue);
 
   final int id;
-  final E type;
+  final Enum type;
   final double initialValue;
   final double width;
   final double height;
@@ -48,7 +47,7 @@ class View<E extends Enum> {
   // 当前值文本样式
   final TextStyle? currentValueTextStyle;
 
-  final double currentValueMarginBottomValue;
+  final double currentValueMarginBottom;
 
   final double checkOrCloseIconMarginTop;
   final double checkOrCloseIconSize;
@@ -63,16 +62,11 @@ class View<E extends Enum> {
 
   double get currentValue => _currentValue;
 
-  bool get initialFinished => offset.dx != 0;
-
   Rect get rect => Rect.fromCenter(
         center: offset,
         width: width,
         height: height,
       );
-
-  /// 默认只能拖动枚举类型的第一项
-  bool get canDrag => type.index == 0;
 
   /// 放大的[Rect]
   /// 用于增大触摸生效的判定区域
@@ -82,9 +76,9 @@ class View<E extends Enum> {
         height: height * zoomedFactor,
       );
 
-  bool hintTestView(Offset position) => zoomedRect.contains(position);
+  bool hintTest(Offset position) => zoomedRect.contains(position);
 
-  void drawAxisPoint(Canvas canvas, Paint paint) {
+  void drawCoordinatePoint(Canvas canvas, Paint paint) {
     canvas.drawOval(rect, paint);
   }
 
@@ -96,12 +90,12 @@ class View<E extends Enum> {
     Canvas canvas, {
     required double chartHeight, // 用于偏移使文字居顶
     required TextPainter textPainter,
-    required double value,
+    required double currentValue,
   }) {
-    _currentValue = value;
+    _currentValue = currentValue;
 
     TextSpan textSpan = TextSpan(
-      text: value.toInt().toString(),
+      text: currentValue.toStringAsFixed(0),
       style: currentValueTextStyle ??
           const TextStyle(
             fontSize: 14,
@@ -115,7 +109,7 @@ class View<E extends Enum> {
     Size size = textPainter.size;
 
     Offset offsetPos = Offset(-size.width / 2, -size.height / 2)
-        .translate(offset.dx, -chartHeight - currentValueMarginBottomValue);
+        .translate(offset.dx, -chartHeight - currentValueMarginBottom);
     textPainter.paint(canvas, offsetPos);
   }
 
@@ -179,13 +173,13 @@ class View<E extends Enum> {
     );
   }
 
-  View<E> copyWith({
+  Coordinate<Enum> copyWith({
     double? initialValue,
     double? width,
     double? height,
     double? zoomedFactor,
     TextStyle? currentValueTextStyle,
-    double? currentValueMarginBottomValue,
+    double? currentValueMarginBottom,
     double? checkOrCloseIconMarginTop,
     double? checkOrCloseIconSize,
     double? closeSize,
@@ -194,7 +188,7 @@ class View<E extends Enum> {
     Color? checkColor,
     Color? closeColor,
   }) =>
-      View<E>(
+      Coordinate<Enum>(
         id: id,
         type: type,
         initialValue: initialValue ?? this.initialValue,
@@ -203,8 +197,8 @@ class View<E extends Enum> {
         zoomedFactor: zoomedFactor ?? this.zoomedFactor,
         currentValueTextStyle:
             currentValueTextStyle ?? this.currentValueTextStyle,
-        currentValueMarginBottomValue:
-            currentValueMarginBottomValue ?? this.currentValueMarginBottomValue,
+        currentValueMarginBottom:
+            currentValueMarginBottom ?? this.currentValueMarginBottom,
         checkOrCloseIconMarginTop:
             checkOrCloseIconMarginTop ?? this.checkOrCloseIconMarginTop,
         checkOrCloseIconSize: checkOrCloseIconSize ?? this.checkOrCloseIconSize,
@@ -225,7 +219,7 @@ class View<E extends Enum> {
         height,
         zoomedFactor,
         currentValueTextStyle,
-        currentValueMarginBottomValue,
+        currentValueMarginBottom,
         checkOrCloseIconMarginTop,
         checkOrCloseIconSize,
         closeSize,
@@ -237,7 +231,7 @@ class View<E extends Enum> {
 
   @override
   bool operator ==(Object other) =>
-      other is View &&
+      other is Coordinate &&
       other.id == id &&
       other.type == type &&
       other.initialValue == initialValue &&
@@ -246,7 +240,7 @@ class View<E extends Enum> {
       other.height == height &&
       other.zoomedFactor == zoomedFactor &&
       other.currentValueTextStyle == currentValueTextStyle &&
-      other.currentValueMarginBottomValue == currentValueMarginBottomValue &&
+      other.currentValueMarginBottom == currentValueMarginBottom &&
       other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
       other.checkOrCloseIconSize == checkOrCloseIconSize &&
       other.closeSize == closeSize &&
