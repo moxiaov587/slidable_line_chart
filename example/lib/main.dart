@@ -29,7 +29,13 @@ class TestData {
             coordinate = Coordinate<CoordinateType>(
               id: index,
               type: index >= 6 ? CoordinateType.right : CoordinateType.left,
-              initialValue: previousValue.last.initialValue + yAxisDivisions,
+              initialValue: index >= 6
+                  ? previousValue
+                      .sublist(0, 6)
+                      .reversed
+                      .toList()[index % 6]
+                      .initialValue
+                  : previousValue.last.initialValue + yAxisDivisions,
             );
           }
 
@@ -53,8 +59,8 @@ class _MyAppState extends State<MyApp> {
   final List<TestData> testData = [
     TestData(
       yAxisMaxValue: -12,
-      yAxisMinValue: -24,
-      yAxisDivisions: 1,
+      yAxisMinValue: -37,
+      yAxisDivisions: 4,
     ),
     TestData(
       yAxisMaxValue: 0,
@@ -67,13 +73,13 @@ class _MyAppState extends State<MyApp> {
       yAxisDivisions: 10,
     ),
     TestData(
-      yAxisMaxValue: 120,
-      yAxisMinValue: 20,
-      yAxisDivisions: 5,
+      yAxisMaxValue: 21,
+      yAxisMinValue: 3,
+      yAxisDivisions: 2,
     ),
   ];
 
-  int index = 3;
+  int index = 0;
 
   List<Coordinate<CoordinateType>> get allCoordinates => testData[index].data;
 
@@ -92,7 +98,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('FlutterLineChart example app'),
+          title: const Text('SlidableLineChart example app'),
         ),
         body: Column(
           children: [
@@ -117,6 +123,10 @@ class _MyAppState extends State<MyApp> {
                   },
                   showTapArea: true,
                   enforceStepOffset: true,
+                  // enableInitializationAnimation: true,
+                  // initializationAnimationDuration:
+                  //     const Duration(milliseconds: 1000),
+                  // onlyRenderEvenYAxisText: false,
                   coordinateStyles: {
                     CoordinateType.left: CoordinateStyle(
                       coordinatePointColor: Colors.red,
