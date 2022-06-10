@@ -26,6 +26,8 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     this.reversedYAxis = false,
     this.onlyRenderEvenYAxisText = true,
     this.coordinateSystemOrigin = const Offset(6.0, 6.0),
+    this.enableInitializationAnimation = true,
+    this.initializationAnimationDuration = const Duration(milliseconds: 1200),
     this.linkLineWidth = 2.0,
     this.axisTextStyle,
     this.axisLineColor,
@@ -86,6 +88,12 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// 坐标系原点
   final Offset coordinateSystemOrigin;
 
+  /// 启用图表初始化动画
+  final bool enableInitializationAnimation;
+
+  /// 图表初始化动画时长
+  final Duration initializationAnimationDuration;
+
   /// 连接线的宽度
   final double linkLineWidth;
 
@@ -128,7 +136,10 @@ class SlidableLineChart<Enum> extends StatefulWidget {
       _SlidableLineChartState<Enum>();
 }
 
-class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
+class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
+    with TickerProviderStateMixin {
+  AnimationController? _animationController;
+
   CoordinateStyle? getCoordinateStyleByType(Enum type) =>
       widget.coordinateStyles?[type];
 
@@ -263,11 +274,15 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
   /// 重置坐标点的初始化状态
   void resetAllCoordinatesOffsetsInitializedStatus() {
     _allCoordinatesOffsetsUninitialized = true;
+
+    _animationController?.reset();
   }
 
   /// 标识坐标点初始化完成
   void allCoordinatesOffsetsInitializationCompleted() {
     _allCoordinatesOffsetsUninitialized = false;
+
+    _animationController?.forward();
   }
 
   /// 生成[yAxis]
@@ -310,9 +325,20 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
         .toList();
   }
 
+  void _initializationAnimationController() {
+    _animationController = AnimationController(
+      vsync: this,
+      duration: widget.initializationAnimationDuration,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
+
+    if (widget.enableInitializationAnimation) {
+      _initializationAnimationController();
+    }
 
     _generateYAxis();
 
@@ -366,6 +392,23 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
       markRebuild = true;
     }
 
+    if (oldWidget.enableInitializationAnimation !=
+            widget.enableInitializationAnimation ||
+        oldWidget.initializationAnimationDuration !=
+            widget.initializationAnimationDuration) {
+      if (widget.enableInitializationAnimation) {
+        _initializationAnimationController();
+
+        resetAllCoordinatesOffsetsInitializedStatus();
+      } else {
+        _animationController?.dispose();
+
+        _animationController = null;
+      }
+
+      markRebuild = true;
+    }
+
     if (oldWidget.linkLineWidth != widget.linkLineWidth ||
         oldWidget.axisTextStyle != widget.axisTextStyle ||
         oldWidget.axisLineColor != widget.axisLineColor ||
@@ -394,6 +437,12 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
   }
 
   @override
+  void dispose() {
+    _animationController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (_, BoxConstraints constraints) {
@@ -403,6 +452,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
         final Widget coordinateSystemPainter = CustomPaint(
           size: Size(chartWidth, chartHeight),
           painter: CoordinateSystemPainter<Enum>(
+            animationController: _animationController,
             coordinatesGroup: coordinatesGroup,
             allCoordinatesOffsetsUninitialized:
                 _allCoordinatesOffsetsUninitialized,
