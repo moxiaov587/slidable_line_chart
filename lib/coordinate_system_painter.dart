@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 
 import 'model/coordinate.dart';
@@ -15,29 +16,35 @@ typedef AdjustLocalPosition = Offset Function(
   required double chartHeight,
 });
 
-typedef GetAxisScaleOffsetValue = double Function(double chartWidth);
+typedef GetXAxisScaleOffsetValue = double Function(double chartWidth);
+
+typedef GetYAxisScaleOffsetValue = double Function(double chartHeight);
+
+typedef GetYAxisRealValue2OffsetValueFactor = double Function(
+    double chartWidth);
 
 typedef GetYAxisOffsetValueWithinDragRange = double Function(
   double dy, {
   required double chartHeight,
-  required double yAxisScaleOffsetValue,
+  required double yAxisRealValue2OffsetValueFactor,
   int yAxisDivisions,
 });
 
 typedef CurrentValue2YAxisOffsetValue = double Function(
   double currentValue, {
   required double chartHeight,
-  required double yAxisScaleOffsetValue,
+  required double yAxisRealValue2OffsetValueFactor,
   int yAxisDivisions,
 });
 
 typedef YAxisOffsetValue2CurrentValue = double Function(
   double yOffset, {
-  required double yAxisScaleOffsetValue,
+  required double yAxisRealValue2OffsetValueFactor,
 });
 
 class CoordinateSystemPainter<Enum> extends CustomPainter {
   CoordinateSystemPainter({
+    required this.animationController,
     required this.coordinatesGroup,
     required this.allCoordinatesOffsetsUninitialized,
     required this.otherCoordinatesGroup,
@@ -50,7 +57,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required this.yAxisMinValue,
     required this.reversedYAxis,
     required this.onlyRenderEvenYAxisText,
-    required this.marginLeftBottom,
+    required this.coordinateSystemOrigin,
     required this.linkLineWidth,
     required this.axisTextStyle,
     required this.axisLineColor,
@@ -67,10 +74,13 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required this.adjustLocalPosition,
     required this.getXAxisScaleOffsetValue,
     required this.getYAxisScaleOffsetValue,
+    required this.getYAxisRealValue2OffsetValueFactor,
     required this.getYAxisOffsetValueWithinDragRange,
     required this.currentValue2YAxisOffsetValue,
     required this.yAxisOffsetValue2CurrentValue,
-  });
+  }) : super(repaint: animationController);
+
+  final AnimationController? animationController;
 
   final List<List<Coordinate<Enum>>> coordinatesGroup;
 
@@ -103,8 +113,8 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   /// Y轴值
   final List<int> yAxis;
 
-  /// 刻度高度
-  final double marginLeftBottom;
+  /// 坐标系原点
+  final Offset coordinateSystemOrigin;
 
   /// 连接线的宽度
   final double linkLineWidth;
@@ -146,9 +156,11 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
   final AdjustLocalPosition adjustLocalPosition;
 
-  final GetAxisScaleOffsetValue getXAxisScaleOffsetValue;
+  final GetXAxisScaleOffsetValue getXAxisScaleOffsetValue;
 
-  final GetAxisScaleOffsetValue getYAxisScaleOffsetValue;
+  final GetYAxisScaleOffsetValue getYAxisScaleOffsetValue;
+
+  final GetYAxisRealValue2OffsetValueFactor getYAxisRealValue2OffsetValueFactor;
 
   final GetYAxisOffsetValueWithinDragRange getYAxisOffsetValueWithinDragRange;
 
@@ -197,14 +209,17 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    /// 将[canvas]平移到左下角
-    canvas.translate(marginLeftBottom, size.height - marginLeftBottom);
+    /// 将[canvas]原点偏移到左下角
+    canvas.translate(
+      coordinateSystemOrigin.dx,
+      size.height - coordinateSystemOrigin.dy,
+    );
 
     /// 坐标轴
     final Path axisLinePath = Path()
-      ..moveTo(-marginLeftBottom, 0)
+      ..moveTo(-coordinateSystemOrigin.dx, 0)
       ..relativeLineTo(size.width, 0)
-      ..moveTo(0, marginLeftBottom)
+      ..moveTo(0, coordinateSystemOrigin.dy)
       ..relativeLineTo(0, -size.height);
 
     canvas.drawPath(axisLinePath, axisLinePaint);
@@ -214,48 +229,70 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     drawXAxis(canvas, size, xAxisScaleOffsetValue: xAxisScaleOffsetValue);
     drawYAxis(canvas, size);
 
-    drawLayer(canvas, size, xAxisScaleOffsetValue: xAxisScaleOffsetValue);
+    drawCoordinates(canvas, size, xAxisScaleOffsetValue: xAxisScaleOffsetValue);
   }
 
-  /// 绘制Layer
-  void drawLayer(
+  /// 初始化[Coordinate]中的[offset]
+  /// 赋予正确的X轴坐标并将当前值转换成坐标值
+  void _initialAllCoordinatesOffsets(
+    Size size, {
+    required double xAxisScaleOffsetValue,
+    required double yAxisRealValue2OffsetValueFactor,
+  }) {
+    for (int i = 0; i < coordinatesGroup.length; i++) {
+      for (int j = 0; j < coordinatesGroup[i].length; j++) {
+        coordinatesGroup[i][j].offset = Offset(
+          (xAxisScaleOffsetValue / 2) + xAxisScaleOffsetValue * j,
+          currentValue2YAxisOffsetValue(
+            coordinatesGroup[i][j].currentValue - yAxisMinValue,
+            chartHeight: size.height,
+            yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
+          ),
+        );
+      }
+    }
+
+    allCoordinatesOffsetsInitializationCompleted.call();
+  }
+
+  /// 绘制坐标点和坐标线
+  void drawCoordinates(
     Canvas canvas,
     Size size, {
     required double xAxisScaleOffsetValue,
   }) {
     canvas.save();
 
-    final double yAxisScaleOffsetValue = getYAxisScaleOffsetValue(size.height);
+    final double yAxisRealValue2OffsetValueFactor =
+        getYAxisRealValue2OffsetValueFactor(size.height);
 
-    /// 初始化[Coordinate]中的[offset]
-    /// 赋予正确的X轴坐标并将当前值转换成坐标值
     if (allCoordinatesOffsetsUninitialized) {
-      for (int i = 0; i < coordinatesGroup.length; i++) {
-        for (int j = 0; j < coordinatesGroup[i].length; j++) {
-          coordinatesGroup[i][j].offset = Offset(
-            (xAxisScaleOffsetValue / 2) + xAxisScaleOffsetValue * j,
-            currentValue2YAxisOffsetValue(
-              coordinatesGroup[i][j].currentValue - yAxisMinValue,
-              chartHeight: size.height,
-              yAxisScaleOffsetValue: yAxisScaleOffsetValue,
-            ),
-          );
-        }
-      }
-
-      allCoordinatesOffsetsInitializationCompleted.call();
+      _initialAllCoordinatesOffsets(
+        size,
+        xAxisScaleOffsetValue: xAxisScaleOffsetValue,
+        yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
+      );
     }
 
     /// 先绘制[otherCoordinatesGroup]使[canDragCoordinates]绘制在顶层
-    for (var coordinates in otherCoordinatesGroup.reversed) {
+    for (final List<Coordinate<Enum>> coordinates
+        in otherCoordinatesGroup.reversed) {
       final CoordinateStyle? coordinateStyle =
           getCoordinateStyleByType(coordinates.first.type);
 
-      drawLinkLine(canvas,
-          coordinates: coordinates, coordinateStyle: coordinateStyle);
-      drawFillColor(canvas,
-          coordinates: coordinates, coordinateStyle: coordinateStyle);
-      for (var coordinate in coordinates) {
+      drawLinkLine(
+        canvas,
+        coordinates: coordinates,
+        coordinateStyle: coordinateStyle,
+      );
+
+      drawFillColor(
+        canvas,
+        coordinates: coordinates,
+        coordinateStyle: coordinateStyle,
+      );
+
+      for (final Coordinate coordinate in coordinates) {
         coordinate.drawCoordinatePoint(
           canvas,
           coordinatePointPaint
@@ -269,12 +306,19 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
       final CoordinateStyle? coordinatesStyle =
           getCoordinateStyleByType(canDragCoordinates!.first.type);
 
-      drawLinkLine(canvas,
-          coordinates: canDragCoordinates!, coordinateStyle: coordinatesStyle);
-      drawFillColor(canvas,
-          coordinates: canDragCoordinates!, coordinateStyle: coordinatesStyle);
+      drawLinkLine(
+        canvas,
+        coordinates: canDragCoordinates!,
+        coordinateStyle: coordinatesStyle,
+      );
 
-      for (var coordinate in canDragCoordinates!) {
+      drawFillColor(
+        canvas,
+        coordinates: canDragCoordinates!,
+        coordinateStyle: coordinatesStyle,
+      );
+
+      for (final Coordinate coordinate in canDragCoordinates!) {
         if (showTapArea) {
           coordinate.drawTapArea(canvas, tapAreaPaint);
         }
@@ -288,7 +332,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
         final double currentValue = yAxisOffsetValue2CurrentValue(
           coordinate.offset.dy,
-          yAxisScaleOffsetValue: yAxisScaleOffsetValue,
+          yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
         );
 
         coordinate.drawCurrentValueText(
@@ -319,23 +363,25 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required List<Coordinate<Enum>> coordinates,
     CoordinateStyle? coordinateStyle,
   }) {
-    final Path linePath = coordinates.skip(1).fold(
+    final Path linePath = coordinates.skip(1).fold<Path>(
           Path()
             ..moveTo(
               coordinates.first.offset.dx,
               coordinates.first.offset.dy,
             ),
-          (path, coordinate) => path
+          (Path path, Coordinate<Enum> coordinate) => path
             ..lineTo(
               coordinate.offset.dx,
               coordinate.offset.dy,
             ),
         );
 
-    PathMetrics pms = linePath.computeMetrics();
-    for (var pm in pms) {
+    final PathMetrics pathMetrics = linePath.computeMetrics();
+
+    for (final PathMetric pathMetric in pathMetrics) {
       canvas.drawPath(
-        pm.extractPath(0, pm.length),
+        pathMetric.extractPath(
+            0, pathMetric.length * (animationController?.value ?? 1)),
         linkLinePaint..color = coordinateStyle?.linkLineColor ?? linkLineColor,
       );
     }
@@ -347,26 +393,32 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required List<Coordinate<Enum>> coordinates,
     CoordinateStyle? coordinateStyle,
   }) {
-    final Path path = coordinates.fold(
-      Path()
-        ..moveTo(
-          coordinates.first.offset.dx,
-          0,
-        ),
-      (path, coordinate) => path
-        ..lineTo(
-          coordinate.offset.dx,
-          coordinate.offset.dy,
-        ),
-    )..lineTo(
-        coordinates.last.offset.dx,
-        0,
-      );
+    final Path path = coordinates.skip(1).foldIndexed<Path>(
+          Path()
+            ..moveTo(
+              coordinates.first.offset.dx,
+              0,
+            ),
+          (int index, Path path, Coordinate<Enum> coordinate) => path
+            ..addPolygon(
+              [
+                /// 由于遍历时skip(1)
+                /// 所以此处的coordinates[index]就是当前coordinate的前一项
+                Offset(coordinates[index].offset.dx, 0),
+                coordinates[index].offset,
+                coordinate.offset,
+                Offset(coordinate.offset.dx, 0),
+              ],
+              false,
+            ),
+        );
 
-    PathMetrics pms = path.computeMetrics();
-    for (var pm in pms) {
+    final PathMetrics pathMetrics = path.computeMetrics();
+
+    for (PathMetric pathMetric in pathMetrics) {
       canvas.drawPath(
-        pm.extractPath(0, pm.length),
+        pathMetric.extractPath(
+            0, pathMetric.length * (animationController?.value ?? 1)),
         fillAreaPaint..color = coordinateStyle?.fillAreaColor ?? fillAreaColor,
       );
     }
@@ -400,40 +452,23 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   void drawYAxis(Canvas canvas, Size size) {
     canvas.save();
 
-    final double yAxisScaleOffsetValue =
-        (size.height - marginLeftBottom) / yAxis.length;
+    final double yAxisScaleOffsetValue = getYAxisScaleOffsetValue(size.height);
 
-    for (int i = 0; i <= yAxis.length; i++) {
+    for (int i = 0; i < yAxis.length; i++) {
       // 第一条线有轴线，所以不必绘制坐标系线
       if (i != 0) {
         // 绘制坐标系线
         canvas.drawLine(
           Offset.zero,
-          Offset(size.width - marginLeftBottom, 0),
+          Offset(size.width - coordinateSystemOrigin.dx, 0),
           gridLinePaint,
         );
       }
 
       if (!onlyRenderEvenYAxisText || (onlyRenderEvenYAxisText && i.isEven)) {
-        late int value;
-
-        if (reversedYAxis) {
-          if (i == yAxis.length) {
-            value = yAxisMinValue;
-          } else {
-            value = yAxis[i] + yAxisDivisions;
-          }
-        } else {
-          if (i == yAxis.length) {
-            value = yAxisMaxValue;
-          } else {
-            value = yAxis[i];
-          }
-        }
-
         _drawAxisText(
           canvas,
-          '$value',
+          '${yAxis[i]}',
           offset: const Offset(-10, 2),
         );
       }
