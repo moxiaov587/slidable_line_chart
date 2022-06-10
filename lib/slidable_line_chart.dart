@@ -2,7 +2,7 @@ library slidable_line_chart;
 
 export 'model/coordinate.dart';
 
-import 'package:collection/collection.dart';
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,7 +25,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     required this.yAxisMinValue,
     this.reversedYAxis = false,
     this.onlyRenderEvenYAxisText = true,
-    this.marginLeftBottom = 8.0,
+    this.coordinateSystemOrigin = const Offset(6.0, 6.0),
     this.linkLineWidth = 2.0,
     this.axisTextStyle,
     this.axisLineColor,
@@ -57,12 +57,24 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   final List<String> xAxis;
 
   /// Y轴最小值
+  ///
+  /// 会根据该值和[yAxisMaxValue], [yAxisDivisions]来生成Y轴
+  ///
+  /// 该值也是用户可以拖动到的最小值
   final int yAxisMinValue;
 
   /// Y轴最大值
+  ///
+  /// 会根据该值和[yAxisMinValue], [yAxisDivisions]来生成Y轴
+  ///
+  /// 该值也是用户可以拖动到的最大值
   final int yAxisMaxValue;
 
   /// Y轴分隔值
+  ///
+  /// 会根据该值和[yAxisMinValue], [yAxisMaxValue]来生成Y轴
+  ///
+  /// 该值也是开启强制步进偏移(`enforceStepOffset`)时的步进值
   final int yAxisDivisions;
 
   /// 反转Y轴
@@ -71,8 +83,8 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// 只渲染偶数项的Y轴文本
   final bool onlyRenderEvenYAxisText;
 
-  /// 左下边距
-  final double marginLeftBottom;
+  /// 坐标系原点
+  final Offset coordinateSystemOrigin;
 
   /// 连接线的宽度
   final double linkLineWidth;
@@ -141,15 +153,15 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
   List<double>? get currentCanDragCoordinatesValue =>
       canDragCoordinates?.map((coordinate) => coordinate.currentValue).toList();
 
-  /// 反向平移[dx]以抵消[CoordinateSystemPainter]中[canvas]的平移
-  double _reverseTranslateX(double dx) => dx - widget.marginLeftBottom;
+  /// 反向偏移[dx]以抵消坐标系原点(`coordinateSystemOrigin`)的偏移
+  double _reverseTranslateX(double dx) => dx - widget.coordinateSystemOrigin.dx;
 
-  /// 反向平移[dy]以抵消[CoordinateSystemPainter]中[canvas]的平移
+  /// 反向偏移[dy]以抵消坐标系原点(`coordinateSystemOrigin`)的偏移
   double _reverseTranslateY(
     double dy, {
     required double chartHeight,
   }) =>
-      dy - chartHeight + widget.marginLeftBottom;
+      dy - chartHeight + widget.coordinateSystemOrigin.dy;
 
   /// 调整[localPosition]
   Offset adjustLocalPosition(
@@ -165,82 +177,106 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
       );
 
   /// 获取X轴均分后的偏移值
+  ///
+  /// 需要减去坐标系原点(`coordinateSystemOrigin`)偏移的[dx]
   double getXAxisScaleOffsetValue(double chartWidth) =>
-      (chartWidth - widget.marginLeftBottom) / widget.xAxis.length;
+      (chartWidth - widget.coordinateSystemOrigin.dx) / widget.xAxis.length;
 
   /// 获取Y轴均分后的偏移值
+  ///
+  /// 需要减去坐标系原点(`coordinateSystemOrigin`)偏移的[dy]
   double getYAxisScaleOffsetValue(double chartHeight) =>
-      (chartHeight - widget.marginLeftBottom) /
+      (chartHeight - widget.coordinateSystemOrigin.dy) / (yAxis.length - 1);
+
+  /// 获取Y轴真实值到偏移值的转换系数
+  double getYAxisRealValue2OffsetValueFactor(double chartHeight) =>
+      (chartHeight - widget.coordinateSystemOrigin.dy) /
       (widget.yAxisMaxValue - widget.yAxisMinValue);
 
   /// 获取拖动范围内的Y轴偏移值
   double getYAxisOffsetValueWithinDragRange(
     double dy, {
     required double chartHeight,
-    required double yAxisScaleOffsetValue,
+    required double yAxisRealValue2OffsetValueFactor,
     int yAxisDivisions = 1,
   }) {
-    double offset =
-        (_reverseTranslateY(dy, chartHeight: chartHeight) / yAxisDivisions)
-            .clamp(
-              _reverseTranslateY(0, chartHeight: chartHeight) / yAxisDivisions,
-              0,
-            )
-            .floorToDouble();
+    double yAxisOffsetValue = (_reverseTranslateY(
+          dy.clamp(
+            0,
+            chartHeight - widget.coordinateSystemOrigin.dy,
+          ),
+          chartHeight: chartHeight,
+        ) /
+        yAxisDivisions);
 
     if (widget.enforceStepOffset) {
       if (widget.reversedYAxis) {
-        offset -= widget.yAxisMinValue * yAxisScaleOffsetValue;
+        yAxisOffsetValue -=
+            widget.yAxisMinValue * yAxisRealValue2OffsetValueFactor;
       } else {
-        offset += widget.yAxisMinValue * yAxisScaleOffsetValue;
+        yAxisOffsetValue +=
+            widget.yAxisMinValue * yAxisRealValue2OffsetValueFactor;
       }
     }
 
-    return offset;
+    return yAxisOffsetValue;
   }
 
   double currentValue2YAxisOffsetValue(
     double currentValue, {
     required double chartHeight,
-    required double yAxisScaleOffsetValue,
+    required double yAxisRealValue2OffsetValueFactor,
     int yAxisDivisions = 1,
   }) =>
       (widget.reversedYAxis
           ? _reverseTranslateY(
-              currentValue * yAxisScaleOffsetValue,
+              currentValue * yAxisRealValue2OffsetValueFactor,
               chartHeight: chartHeight,
             )
-          : -currentValue * yAxisScaleOffsetValue) *
+          : -currentValue * yAxisRealValue2OffsetValueFactor) *
       yAxisDivisions;
 
   double yAxisOffsetValue2CurrentValue(
-    double yOffset, {
-    required double yAxisScaleOffsetValue,
+    double yAxisOffsetValue, {
+    required double yAxisRealValue2OffsetValueFactor,
   }) =>
       (widget.reversedYAxis
-              ? yOffset / yAxisScaleOffsetValue + widget.yAxisMaxValue
-              : widget.yAxisMinValue - yOffset / yAxisScaleOffsetValue)
-          .roundToDouble();
+          ? widget.yAxisMaxValue +
+              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor
+          : widget.yAxisMinValue -
+              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor);
 
-  Coordinate<Enum>? hintTestCoordinate(Offset position) => canDragCoordinates
-      ?.firstWhereOrNull((coordinate) => coordinate.hintTest(position));
+  Coordinate<Enum>? hitTestCoordinate(Offset position) => canDragCoordinates
+      ?.firstWhereOrNull((coordinate) => coordinate.hitTest(position));
 
   /// Y轴值
   late List<int> yAxis;
 
   late List<List<Coordinate<Enum>>> coordinatesGroup;
 
+  /// 所有坐标点(`allCoordinates`)的[offset]值未初始化
+  ///
+  /// 用以标识绘制时坐标点[offset]值的初始化完成状态
+  /// 避免重复初始化
   bool _allCoordinatesOffsetsUninitialized = true;
 
+  /// 重置坐标点的初始化状态
   void resetAllCoordinatesOffsetsInitializedStatus() {
     _allCoordinatesOffsetsUninitialized = true;
   }
 
+  /// 标识坐标点初始化完成
   void allCoordinatesOffsetsInitializationCompleted() {
     _allCoordinatesOffsetsUninitialized = false;
   }
 
-  void _initialYAxis() {
+  /// 生成[yAxis]
+  ///
+  /// 每个图表只需要生成一次
+  ///
+  /// 当`reversedYAxis`, `yAxisMaxValue`, `yAxisMinValue`
+  /// 和`onlyRenderEvenYAxisText`任一值改变时需要重新生成
+  void _generateYAxis() {
     yAxis = List.generate(
         (widget.yAxisMaxValue - widget.yAxisMinValue) ~/ widget.yAxisDivisions,
         (int index) =>
@@ -251,18 +287,23 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
     }
   }
 
-  void _initialCoordinatesGroup() {
+  /// 生成[coordinatesGroup]
+  ///
+  /// 每个图表只需要生成一次
+  ///
+  /// 仅有当`allCoordinates`改变时需要重新生成
+  void _generateCoordinatesGroup() {
     coordinatesGroup = widget.allCoordinates
         .fold<Map<Enum, List<Coordinate<Enum>>>>(
           <Enum, List<Coordinate<Enum>>>{},
-          (previousValue, coordinate) {
-            if (previousValue.containsKey(coordinate.type)) {
-              previousValue[coordinate.type]!.add(coordinate);
+          (coordinatesGroupMap, coordinate) {
+            if (coordinatesGroupMap.containsKey(coordinate.type)) {
+              coordinatesGroupMap[coordinate.type]!.add(coordinate);
             } else {
-              previousValue[coordinate.type] = [coordinate];
+              coordinatesGroupMap[coordinate.type] = [coordinate];
             }
 
-            return previousValue;
+            return coordinatesGroupMap;
           },
         )
         .values
@@ -273,9 +314,9 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
   void initState() {
     super.initState();
 
-    _initialYAxis();
+    _generateYAxis();
 
-    _initialCoordinatesGroup();
+    _generateCoordinatesGroup();
   }
 
   @override
@@ -292,7 +333,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
         oldWidget.yAxisMaxValue != widget.yAxisMaxValue ||
         oldWidget.yAxisMinValue != widget.yAxisMinValue ||
         oldWidget.yAxisDivisions != widget.yAxisDivisions) {
-      _initialYAxis();
+      _generateYAxis();
 
       markRebuild = true;
     }
@@ -303,7 +344,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
         widget.allCoordinates
             .map((coordinates) => coordinates.hashCode)
             .join()) {
-      _initialCoordinatesGroup();
+      _generateCoordinatesGroup();
 
       resetAllCoordinatesOffsetsInitializedStatus();
 
@@ -311,14 +352,21 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
     }
 
     if (oldWidget.reversedYAxis != widget.reversedYAxis ||
-        oldWidget.marginLeftBottom != widget.marginLeftBottom) {
+        oldWidget.coordinateSystemOrigin != widget.coordinateSystemOrigin) {
       resetAllCoordinatesOffsetsInitializedStatus();
 
       markRebuild = true;
     }
 
-    if (oldWidget.onlyRenderEvenYAxisText != widget.onlyRenderEvenYAxisText ||
-        oldWidget.linkLineWidth != widget.linkLineWidth ||
+    if (oldWidget.onlyRenderEvenYAxisText != widget.onlyRenderEvenYAxisText) {
+      _generateYAxis();
+
+      resetAllCoordinatesOffsetsInitializedStatus();
+
+      markRebuild = true;
+    }
+
+    if (oldWidget.linkLineWidth != widget.linkLineWidth ||
         oldWidget.axisTextStyle != widget.axisTextStyle ||
         oldWidget.axisLineColor != widget.axisLineColor ||
         oldWidget.gridLineColor != widget.gridLineColor ||
@@ -352,124 +400,136 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>> {
         final double chartWidth = constraints.maxWidth;
         final double chartHeight = constraints.maxHeight;
 
-        return GestureDetector(
-          onVerticalDragDown: (DragDownDetails details) {
-            _currentSelectedCoordinate = hintTestCoordinate(
-              adjustLocalPosition(
-                details.localPosition,
-                chartHeight: chartHeight,
-              ),
-            );
-
-            if (_currentSelectedCoordinate != null) {
-              HapticFeedback.mediumImpact();
-            }
-          },
-          onVerticalDragStart: (DragStartDetails details) {
-            _currentSelectedCoordinate ??= hintTestCoordinate(
-              adjustLocalPosition(
-                details.localPosition,
-                chartHeight: chartHeight,
-              ),
-            );
-          },
-          onVerticalDragUpdate: (DragUpdateDetails details) {
-            if (_currentSelectedCoordinate != null) {
-              late double dy;
-
-              final double yAxisScaleOffsetValue =
-                  getYAxisScaleOffsetValue(chartHeight);
-
-              if (widget.enforceStepOffset) {
-                dy = getYAxisOffsetValueWithinDragRange(
-                  details.localPosition.dy,
-                  chartHeight: chartHeight,
-                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
-                  yAxisDivisions: widget.yAxisDivisions,
-                );
-
-                final double currentValue = yAxisOffsetValue2CurrentValue(
-                  dy,
-                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
-                );
-
-                dy = currentValue2YAxisOffsetValue(
-                  currentValue,
-                  chartHeight: chartHeight,
-                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
-                  yAxisDivisions: widget.yAxisDivisions,
-                );
-              } else {
-                dy = getYAxisOffsetValueWithinDragRange(
-                  details.localPosition.dy,
-                  chartHeight: chartHeight,
-                  yAxisScaleOffsetValue: yAxisScaleOffsetValue,
-                );
-              }
-
-              _currentSelectedCoordinate!.offset = Offset(
-                _currentSelectedCoordinate!.offset.dx,
-                dy,
-              );
-
-              setState(() {});
-
-              if (currentCanDragCoordinatesValue != null) {
-                widget.onChange?.call(currentCanDragCoordinatesValue!);
-              }
-            }
-          },
-          onVerticalDragEnd: (DragEndDetails details) {
-            _currentSelectedCoordinate = null;
-
-            if (currentCanDragCoordinatesValue != null) {
-              widget.onChangeEnd?.call(currentCanDragCoordinatesValue!);
-            }
-          },
-          onVerticalDragCancel: () {
-            _currentSelectedCoordinate = null;
-          },
-          child: CustomPaint(
-            size: Size(chartWidth, chartHeight),
-            painter: CoordinateSystemPainter<Enum>(
-              coordinatesGroup: coordinatesGroup,
-              allCoordinatesOffsetsUninitialized:
-                  _allCoordinatesOffsetsUninitialized,
-              otherCoordinatesGroup: otherCoordinatesGroup,
-              hasCanDragCoordinates: hasCanDragCoordinates,
-              canDragCoordinates: canDragCoordinates,
-              xAxis: widget.xAxis,
-              yAxis: yAxis,
-              yAxisDivisions: widget.yAxisDivisions,
-              yAxisMaxValue: widget.yAxisMaxValue,
-              yAxisMinValue: widget.yAxisMinValue,
-              reversedYAxis: widget.reversedYAxis,
-              onlyRenderEvenYAxisText: widget.onlyRenderEvenYAxisText,
-              marginLeftBottom: widget.marginLeftBottom,
-              linkLineWidth: widget.linkLineWidth,
-              axisTextStyle: widget.axisTextStyle,
-              axisLineColor: widget.axisLineColor,
-              gridLineColor: widget.gridLineColor,
-              defaultAxisPointColor: widget.defaultCoordinatePointColor,
-              defaultLinkLineColor: widget.defaultLinkLineColor,
-              defaultFillAreaColor: widget.defaultFillAreaColor,
-              tapAreaColor: widget.tapAreaColor,
-              enforceStepOffset: widget.enforceStepOffset,
-              showTapArea: widget.showTapArea,
-              drawCheckOrClose: widget.drawCheckOrClose,
-              allCoordinatesOffsetsInitializationCompleted:
-                  allCoordinatesOffsetsInitializationCompleted,
-              getCoordinateStyleByType: getCoordinateStyleByType,
-              adjustLocalPosition: adjustLocalPosition,
-              getXAxisScaleOffsetValue: getXAxisScaleOffsetValue,
-              getYAxisScaleOffsetValue: getYAxisScaleOffsetValue,
-              getYAxisOffsetValueWithinDragRange:
-                  getYAxisOffsetValueWithinDragRange,
-              currentValue2YAxisOffsetValue: currentValue2YAxisOffsetValue,
-              yAxisOffsetValue2CurrentValue: yAxisOffsetValue2CurrentValue,
-            ),
+        final Widget coordinateSystemPainter = CustomPaint(
+          size: Size(chartWidth, chartHeight),
+          painter: CoordinateSystemPainter<Enum>(
+            coordinatesGroup: coordinatesGroup,
+            allCoordinatesOffsetsUninitialized:
+                _allCoordinatesOffsetsUninitialized,
+            otherCoordinatesGroup: otherCoordinatesGroup,
+            hasCanDragCoordinates: hasCanDragCoordinates,
+            canDragCoordinates: canDragCoordinates,
+            xAxis: widget.xAxis,
+            yAxis: yAxis,
+            yAxisDivisions: widget.yAxisDivisions,
+            yAxisMaxValue: widget.yAxisMaxValue,
+            yAxisMinValue: widget.yAxisMinValue,
+            reversedYAxis: widget.reversedYAxis,
+            onlyRenderEvenYAxisText: widget.onlyRenderEvenYAxisText,
+            coordinateSystemOrigin: widget.coordinateSystemOrigin,
+            linkLineWidth: widget.linkLineWidth,
+            axisTextStyle: widget.axisTextStyle,
+            axisLineColor: widget.axisLineColor,
+            gridLineColor: widget.gridLineColor,
+            defaultAxisPointColor: widget.defaultCoordinatePointColor,
+            defaultLinkLineColor: widget.defaultLinkLineColor,
+            defaultFillAreaColor: widget.defaultFillAreaColor,
+            tapAreaColor: widget.tapAreaColor,
+            enforceStepOffset: widget.enforceStepOffset,
+            showTapArea: widget.showTapArea,
+            drawCheckOrClose: widget.drawCheckOrClose,
+            allCoordinatesOffsetsInitializationCompleted:
+                allCoordinatesOffsetsInitializationCompleted,
+            getCoordinateStyleByType: getCoordinateStyleByType,
+            adjustLocalPosition: adjustLocalPosition,
+            getXAxisScaleOffsetValue: getXAxisScaleOffsetValue,
+            getYAxisScaleOffsetValue: getYAxisScaleOffsetValue,
+            getYAxisRealValue2OffsetValueFactor:
+                getYAxisRealValue2OffsetValueFactor,
+            getYAxisOffsetValueWithinDragRange:
+                getYAxisOffsetValueWithinDragRange,
+            currentValue2YAxisOffsetValue: currentValue2YAxisOffsetValue,
+            yAxisOffsetValue2CurrentValue: yAxisOffsetValue2CurrentValue,
           ),
         );
+
+        if (hasCanDragCoordinates) {
+          return GestureDetector(
+            onVerticalDragDown: (DragDownDetails details) {
+              _currentSelectedCoordinate = hitTestCoordinate(
+                adjustLocalPosition(
+                  details.localPosition,
+                  chartHeight: chartHeight,
+                ),
+              );
+
+              if (_currentSelectedCoordinate != null) {
+                HapticFeedback.mediumImpact();
+              }
+            },
+            onVerticalDragStart: (DragStartDetails details) {
+              _currentSelectedCoordinate ??= hitTestCoordinate(
+                adjustLocalPosition(
+                  details.localPosition,
+                  chartHeight: chartHeight,
+                ),
+              );
+            },
+            onVerticalDragUpdate: (DragUpdateDetails details) {
+              if (_currentSelectedCoordinate != null) {
+                late double dy;
+
+                final double yAxisRealValue2OffsetValueFactor =
+                    getYAxisRealValue2OffsetValueFactor(chartHeight);
+
+                if (widget.enforceStepOffset) {
+                  dy = getYAxisOffsetValueWithinDragRange(
+                    details.localPosition.dy,
+                    chartHeight: chartHeight,
+                    yAxisRealValue2OffsetValueFactor:
+                        yAxisRealValue2OffsetValueFactor,
+                    yAxisDivisions: widget.yAxisDivisions,
+                  );
+
+                  final double currentValue = yAxisOffsetValue2CurrentValue(
+                    dy,
+                    yAxisRealValue2OffsetValueFactor:
+                        yAxisRealValue2OffsetValueFactor,
+                  );
+
+                  dy = currentValue2YAxisOffsetValue(
+                    currentValue,
+                    chartHeight: chartHeight,
+                    yAxisRealValue2OffsetValueFactor:
+                        yAxisRealValue2OffsetValueFactor,
+                    yAxisDivisions: widget.yAxisDivisions,
+                  );
+                } else {
+                  dy = getYAxisOffsetValueWithinDragRange(
+                    details.localPosition.dy,
+                    chartHeight: chartHeight,
+                    yAxisRealValue2OffsetValueFactor:
+                        yAxisRealValue2OffsetValueFactor,
+                  );
+                }
+
+                _currentSelectedCoordinate!.offset = Offset(
+                  _currentSelectedCoordinate!.offset.dx,
+                  dy,
+                );
+
+                setState(() {});
+
+                if (currentCanDragCoordinatesValue != null) {
+                  widget.onChange?.call(currentCanDragCoordinatesValue!);
+                }
+              }
+            },
+            onVerticalDragEnd: (DragEndDetails details) {
+              _currentSelectedCoordinate = null;
+
+              if (currentCanDragCoordinatesValue != null) {
+                widget.onChangeEnd?.call(currentCanDragCoordinatesValue!);
+              }
+            },
+            onVerticalDragCancel: () {
+              _currentSelectedCoordinate = null;
+            },
+            child: coordinateSystemPainter,
+          );
+        }
+
+        return coordinateSystemPainter;
       },
     );
   }
