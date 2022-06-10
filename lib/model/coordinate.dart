@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 class CoordinateStyle {
@@ -69,14 +71,15 @@ class Coordinate<Enum> {
       );
 
   /// 放大的[Rect]
+  ///
   /// 用于增大触摸生效的判定区域
   Rect get zoomedRect => Rect.fromCenter(
         center: offset,
-        width: width * zoomedFactor,
-        height: height * zoomedFactor,
+        width: math.min(kMinInteractiveDimension, width * zoomedFactor),
+        height: math.min(kMinInteractiveDimension, height * zoomedFactor),
       );
 
-  bool hintTest(Offset position) => zoomedRect.contains(position);
+  bool hitTest(Offset position) => zoomedRect.contains(position);
 
   void drawCoordinatePoint(Canvas canvas, Paint paint) {
     canvas.drawOval(rect, paint);
@@ -95,7 +98,7 @@ class Coordinate<Enum> {
     _currentValue = currentValue;
 
     TextSpan textSpan = TextSpan(
-      text: currentValue.toStringAsFixed(0),
+      text: currentValue.toStringAsFixed(2),
       style: currentValueTextStyle ??
           const TextStyle(
             fontSize: 14,
