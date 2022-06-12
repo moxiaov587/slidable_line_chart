@@ -13,8 +13,8 @@ enum CoordinateType {
 
 class TestData {
   TestData({
-    required this.yAxisMaxValue,
-    required this.yAxisMinValue,
+    required this.max,
+    required this.min,
     required this.yAxisDivisions,
   }) : data = List<int>.generate(12, (index) => index)
             .fold<List<Coordinate<CoordinateType>>>([], (previousValue, index) {
@@ -23,7 +23,7 @@ class TestData {
             coordinate = Coordinate<CoordinateType>(
               id: index,
               type: CoordinateType.left,
-              initialValue: yAxisMinValue.toDouble(),
+              initialValue: min.toDouble(),
             );
           } else {
             coordinate = Coordinate<CoordinateType>(
@@ -43,8 +43,8 @@ class TestData {
         });
 
   final List<Coordinate<CoordinateType>> data;
-  final int yAxisMaxValue;
-  final int yAxisMinValue;
+  final int max;
+  final int min;
   final int yAxisDivisions;
 }
 
@@ -58,23 +58,23 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   final List<TestData> testData = [
     TestData(
-      yAxisMaxValue: -12,
-      yAxisMinValue: -37,
-      yAxisDivisions: 4,
+      max: 12,
+      min: -37,
+      yAxisDivisions: 3,
     ),
     TestData(
-      yAxisMaxValue: 0,
-      yAxisMinValue: -12,
+      max: 0,
+      min: -12,
       yAxisDivisions: 1,
     ),
     TestData(
-      yAxisMaxValue: 120,
-      yAxisMinValue: 0,
+      max: 120,
+      min: 0,
       yAxisDivisions: 10,
     ),
     TestData(
-      yAxisMaxValue: 21,
-      yAxisMinValue: 3,
+      max: 21,
+      min: 3,
       yAxisDivisions: 2,
     ),
   ];
@@ -83,8 +83,8 @@ class _MyAppState extends State<MyApp> {
 
   List<Coordinate<CoordinateType>> get allCoordinates => testData[index].data;
 
-  int get yAxisMaxValue => testData[index].yAxisMaxValue;
-  int get yAxisMinValue => testData[index].yAxisMinValue;
+  int get max => testData[index].max;
+  int get min => testData[index].min;
   int get yAxisDivisions => testData[index].yAxisDivisions;
 
   CoordinateType? canDragCoordinateType = CoordinateType.left;
@@ -116,8 +116,8 @@ class _MyAppState extends State<MyApp> {
                   reversedYAxis: reversedYAxis,
                   xAxis: const <String>['500', '1k', '2k', '4k', '6k', '8k'],
                   yAxisDivisions: yAxisDivisions,
-                  yAxisMaxValue: yAxisMaxValue,
-                  yAxisMinValue: yAxisMinValue,
+                  max: max,
+                  min: min,
                   drawCheckOrClose: (double value) {
                     return value >= 30;
                   },
