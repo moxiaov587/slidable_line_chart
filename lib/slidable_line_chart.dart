@@ -21,8 +21,8 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     required this.allCoordinates,
     required this.xAxis,
     required this.yAxisDivisions,
-    required this.yAxisMaxValue,
-    required this.yAxisMinValue,
+    required this.max,
+    required this.min,
     this.reversedYAxis = false,
     this.onlyRenderEvenYAxisText = true,
     this.coordinateSystemOrigin = const Offset(6.0, 6.0),
@@ -42,10 +42,9 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     this.drawCheckOrClose,
     this.onChange,
     this.onChangeEnd,
-  })  : assert(yAxisMaxValue > yAxisMinValue,
-            'yAxisMaxValue($yAxisMaxValue) must be larger than yAxisMinValue($yAxisMinValue)'),
-        assert(yAxisDivisions > 0,
-            'yAxisDivisions($yAxisDivisions) must be larger than 0'),
+  })  : assert(max > min, 'max($max) must be larger than min($min)'),
+        assert(
+            yAxisDivisions > 0, 'min($yAxisDivisions) must be larger than 0'),
         super(key: key);
 
   final Enum? canDragCoordinateType;
@@ -58,29 +57,27 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// X轴值
   final List<String> xAxis;
 
-  /// Y轴最小值
+  /// 可以拖动到的最小值
   ///
-  /// 会根据该值和[yAxisMaxValue], [yAxisDivisions]来生成Y轴
+  /// 会根据该值和[max], [yAxisDivisions]来生成Y轴
   ///
-  /// 该值也是用户可以拖动到的最小值
+  /// 该值也是Y轴最小值
   ///
   /// Y轴生成还受[reversedYAxis], [onlyRenderEvenYAxisText]影响
   /// 详见[_generateYAxis]
-  final int yAxisMinValue;
+  final int min;
 
-  /// Y轴最大值
+  /// 可以拖动到的最大值
   ///
-  /// 会根据该值和[yAxisMinValue], [yAxisDivisions]来生成Y轴
-  ///
-  /// 该值也是用户可以拖动到的最大值
+  /// 会根据该值和[min], [yAxisDivisions]来生成Y轴
   ///
   /// Y轴生成还受[reversedYAxis], [onlyRenderEvenYAxisText]影响
   /// 详见[_generateYAxis]
-  final int yAxisMaxValue;
+  final int max;
 
   /// Y轴分隔值
   ///
-  /// 会根据该值和[yAxisMinValue], [yAxisMaxValue]来生成Y轴
+  /// 会根据该值和[min], [max]来生成Y轴
   ///
   /// 该值也是开启强制步进偏移(`enforceStepOffset`)时的步进值
   final int yAxisDivisions;
@@ -182,7 +179,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   }) =>
       dy - chartHeight + widget.coordinateSystemOrigin.dy;
 
-  /// 调整[localPosition]
+  /// 校准[localPosition]
   Offset adjustLocalPosition(
     Offset localPosition, {
     required double chartHeight,
@@ -207,30 +204,29 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   double getYAxisScaleOffsetValue(double chartHeight) =>
       (chartHeight - widget.coordinateSystemOrigin.dy) / (yAxis.length - 1);
 
-  /// 获取经过[_generateYAxis]处理后的Y轴实际最大值
+  /// 获取经过[_generateYAxis]处理后的Y轴最大值
   ///
   /// 当[reversedYAxis]为true时是Y轴第一项
   /// 否则是Y轴最后一项
-  int get realYAxisMaxValue => widget.reversedYAxis ? yAxis.first : yAxis.last;
+  int get yAxisMaxValue => widget.reversedYAxis ? yAxis.first : yAxis.last;
 
-  /// Y轴实际最大值与限制最大值的差
+  /// Y轴最大值与限制最大值的差
   ///
   /// 用于限制拖动范围
-  int get yAxisMaxValueDifference => realYAxisMaxValue - widget.yAxisMaxValue;
+  int get yAxisMaxValueDifference => yAxisMaxValue - widget.max;
 
-  /// Y轴实际最大值占据坐标网格数
+  /// 可以拖动到的最大值(`max`)占据坐标网格数
   ///
   /// 用于限制开启强制步进偏移(`enforceStepOffset`)时
   /// 特殊场景下的最大值
-  double get realYAxisMaxNumberOfGridsOccupied =>
-      ((widget.yAxisMaxValue - widget.yAxisMinValue) /
-          (realYAxisMaxValue - widget.yAxisMinValue)) *
+  double get maxNumberOfGridsOccupied =>
+      ((widget.max - widget.min) / (yAxisMaxValue - widget.min)) *
       (yAxis.length - 1);
 
   /// 获取Y轴真实值到偏移值的转换系数
   double getYAxisRealValue2OffsetValueFactor(double chartHeight) =>
       (chartHeight - widget.coordinateSystemOrigin.dy) /
-      (realYAxisMaxValue - widget.yAxisMinValue);
+      (yAxisMaxValue - widget.min);
 
   /// 获取拖动范围内的Y轴偏移值
   double getYAxisOffsetValueWithinDragRange(
@@ -258,11 +254,9 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
     if (widget.enforceStepOffset) {
       if (widget.reversedYAxis) {
-        yAxisOffsetValue -=
-            widget.yAxisMinValue * yAxisRealValue2OffsetValueFactor;
+        yAxisOffsetValue -= widget.min * yAxisRealValue2OffsetValueFactor;
       } else {
-        yAxisOffsetValue +=
-            widget.yAxisMinValue * yAxisRealValue2OffsetValueFactor;
+        yAxisOffsetValue += widget.min * yAxisRealValue2OffsetValueFactor;
       }
     }
 
@@ -288,10 +282,8 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     required double yAxisRealValue2OffsetValueFactor,
   }) =>
       widget.reversedYAxis
-          ? realYAxisMaxValue +
-              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor
-          : widget.yAxisMinValue -
-              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor;
+          ? yAxisMaxValue + yAxisOffsetValue / yAxisRealValue2OffsetValueFactor
+          : widget.min - yAxisOffsetValue / yAxisRealValue2OffsetValueFactor;
 
   /// 保留上下界执行[round]和[clamp]
   double _keepBoundaryToRoundAndClamp(
@@ -336,7 +328,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
         yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
       );
 
-      final double max = min + realYAxisMaxNumberOfGridsOccupied;
+      final double max = min + maxNumberOfGridsOccupied;
 
       currentValue = _keepBoundaryToRoundAndClamp(
         min,
@@ -346,7 +338,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     } else {
       currentValue = _keepBoundaryToRoundAndClamp(
         0,
-        realYAxisMaxNumberOfGridsOccupied,
+        maxNumberOfGridsOccupied,
         value: currentValue,
       );
     }
@@ -402,11 +394,9 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// 且即将生成的数组长度为偶数时, 需使长度+1
   void _generateYAxis() {
     int yAxisLength =
-        ((widget.yAxisMaxValue - widget.yAxisMinValue) / widget.yAxisDivisions)
-            .ceil();
+        ((widget.max - widget.min) / widget.yAxisDivisions).ceil();
 
-    if (widget.yAxisMaxValue >
-        widget.yAxisMinValue + (yAxisLength - 1) * widget.yAxisDivisions) {
+    if (widget.max > widget.min + (yAxisLength - 1) * widget.yAxisDivisions) {
       yAxisLength += 1;
     }
 
@@ -416,7 +406,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
     yAxis = List<int>.generate(
       yAxisLength,
-      (int index) => widget.yAxisMinValue + index * widget.yAxisDivisions,
+      (int index) => widget.min + index * widget.yAxisDivisions,
       growable: false,
     ).toList();
 
@@ -482,8 +472,8 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     }
 
     if (oldWidget.reversedYAxis != widget.reversedYAxis ||
-        oldWidget.yAxisMaxValue != widget.yAxisMaxValue ||
-        oldWidget.yAxisMinValue != widget.yAxisMinValue ||
+        oldWidget.max != widget.max ||
+        oldWidget.min != widget.min ||
         oldWidget.yAxisDivisions != widget.yAxisDivisions) {
       _generateYAxis();
 
@@ -589,8 +579,8 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
             xAxis: widget.xAxis,
             yAxis: yAxis,
             yAxisDivisions: widget.yAxisDivisions,
-            yAxisMaxValue: widget.yAxisMaxValue,
-            yAxisMinValue: widget.yAxisMinValue,
+            yAxisMaxValue: widget.max,
+            yAxisMinValue: widget.min,
             reversedYAxis: widget.reversedYAxis,
             onlyRenderEvenYAxisText: widget.onlyRenderEvenYAxisText,
             coordinateSystemOrigin: widget.coordinateSystemOrigin,
