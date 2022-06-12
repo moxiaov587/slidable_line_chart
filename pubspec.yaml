@@ -1,7 +1,7 @@
 name: slidable_line_chart
 description: A line chart plugin that responds to touch events.
-version: 0.0.1
-homepage:
+version: 0.1.0
+homepage: https://github.com/moxiaov587/slidable_line_chart
 
 environment:
   sdk: ">=2.16.2 <3.0.0"
