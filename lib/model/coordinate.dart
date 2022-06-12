@@ -97,7 +97,7 @@ class Coordinate<Enum> {
   }) {
     _currentValue = currentValue;
 
-    TextSpan textSpan = TextSpan(
+    final TextSpan textSpan = TextSpan(
       text: currentValue.toStringAsFixed(2),
       style: currentValueTextStyle ??
           const TextStyle(
@@ -109,9 +109,9 @@ class Coordinate<Enum> {
     textPainter.text = textSpan;
     textPainter.layout();
 
-    Size size = textPainter.size;
+    final Size size = textPainter.size;
 
-    Offset offsetPos = Offset(-size.width / 2, -size.height / 2)
+    final Offset offsetPos = Offset(-size.width / 2, -size.height / 2)
         .translate(offset.dx, -chartHeight - currentValueMarginBottom);
     textPainter.paint(canvas, offsetPos);
   }
@@ -123,7 +123,7 @@ class Coordinate<Enum> {
 
     final Path checkPath = Path()
       ..addPolygon(
-        [
+        <Offset>[
           Offset(x - 1 / 2 * radius, y),
           Offset(x - radius / 6, y + (radius / 2 - radius / 6)),
           Offset(x + radius * 1 / 2, y - radius * 1 / 3)

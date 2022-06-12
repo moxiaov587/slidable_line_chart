@@ -195,7 +195,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   late final Paint coordinatePointPaint = Paint()..color = coordinatePointColor;
 
   /// 连接线画笔
-  late final linkLinePaint = Paint()
+  late final Paint linkLinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = linkLineWidth
     ..color = linkLineColor;
@@ -292,7 +292,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         coordinateStyle: coordinateStyle,
       );
 
-      for (final Coordinate coordinate in coordinates) {
+      for (final Coordinate<Enum> coordinate in coordinates) {
         coordinate.drawCoordinatePoint(
           canvas,
           coordinatePointPaint
@@ -318,7 +318,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         coordinateStyle: coordinatesStyle,
       );
 
-      for (final Coordinate coordinate in canDragCoordinates!) {
+      for (final Coordinate<Enum> coordinate in canDragCoordinates!) {
         if (showTapArea) {
           coordinate.drawTapArea(canvas, tapAreaPaint);
         }
@@ -343,7 +343,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         );
 
         if (drawCheckOrClose != null) {
-          bool result = drawCheckOrClose!.call(currentValue);
+          final bool result = drawCheckOrClose!.call(currentValue);
 
           if (result) {
             coordinate.drawCheck(canvas);
@@ -401,7 +401,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
             ),
           (int index, Path path, Coordinate<Enum> coordinate) => path
             ..addPolygon(
-              [
+              <Offset>[
                 /// 由于遍历时skip(1)
                 /// 所以此处的coordinates[index]就是当前coordinate的前一项
                 Offset(coordinates[index].offset.dx, 0),
@@ -415,10 +415,12 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final PathMetrics pathMetrics = path.computeMetrics();
 
-    for (PathMetric pathMetric in pathMetrics) {
+    for (final PathMetric pathMetric in pathMetrics) {
       canvas.drawPath(
         pathMetric.extractPath(
-            0, pathMetric.length * (animationController?.value ?? 1)),
+          0,
+          pathMetric.length * (animationController?.value ?? 1),
+        ),
         fillAreaPaint..color = coordinateStyle?.fillAreaColor ?? fillAreaColor,
       );
     }
@@ -484,7 +486,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     Alignment alignment = Alignment.centerRight,
     Offset offset = Offset.zero,
   }) {
-    TextSpan textSpan = TextSpan(
+    final TextSpan textSpan = TextSpan(
       text: text,
       style: axisTextStyle ??
           const TextStyle(
@@ -507,5 +509,6 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CoordinateSystemPainter oldDelegate) => true;
+  bool shouldRepaint(covariant CoordinateSystemPainter<Enum> oldDelegate) =>
+      true;
 }

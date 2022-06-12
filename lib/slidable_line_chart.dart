@@ -1,15 +1,15 @@
 library slidable_line_chart;
 
-export 'model/coordinate.dart';
-
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'model/coordinate.dart';
 import 'coordinate_system_painter.dart';
+import 'model/coordinate.dart';
+
+export 'model/coordinate.dart';
 
 typedef CanDragCoordinatesValueCallback = void Function(
     List<double> canDragCoordinatesValue);
@@ -158,17 +158,19 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       return null;
     }
 
-    return coordinatesGroup.firstWhereOrNull((coordinates) =>
-        coordinates.first.type == widget.canDragCoordinateType);
+    return coordinatesGroup.firstWhereOrNull(
+        (List<Coordinate<Enum>> coordinates) =>
+            coordinates.first.type == widget.canDragCoordinateType);
   }
 
   List<List<Coordinate<Enum>>> get otherCoordinatesGroup => coordinatesGroup
-      .where((coordinates) =>
+      .where((List<Coordinate<Enum>> coordinates) =>
           coordinates.first.type != widget.canDragCoordinateType)
       .toList();
 
-  List<double>? get currentCanDragCoordinatesValue =>
-      canDragCoordinates?.map((coordinate) => coordinate.currentValue).toList();
+  List<double>? get currentCanDragCoordinatesValue => canDragCoordinates
+      ?.map((Coordinate<Enum> coordinate) => coordinate.currentValue)
+      .toList();
 
   /// 反向偏移[dx]以抵消坐标系原点(`coordinateSystemOrigin`)的偏移
   double _reverseTranslateX(double dx) => dx - widget.coordinateSystemOrigin.dx;
@@ -237,7 +239,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     required double yAxisRealValue2OffsetValueFactor,
     int yAxisDivisions = 1,
   }) {
-    double yAxisOffsetValue = (_reverseTranslateY(
+    double yAxisOffsetValue = _reverseTranslateY(
           widget.reversedYAxis
               ? dy.clamp(
                   0,
@@ -252,7 +254,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
                 ),
           chartHeight: chartHeight,
         ) /
-        yAxisDivisions);
+        yAxisDivisions;
 
     if (widget.enforceStepOffset) {
       if (widget.reversedYAxis) {
@@ -285,11 +287,11 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     double yAxisOffsetValue, {
     required double yAxisRealValue2OffsetValueFactor,
   }) =>
-      (widget.reversedYAxis
+      widget.reversedYAxis
           ? realYAxisMaxValue +
               yAxisOffsetValue / yAxisRealValue2OffsetValueFactor
           : widget.yAxisMinValue -
-              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor);
+              yAxisOffsetValue / yAxisRealValue2OffsetValueFactor;
 
   /// 保留上下界执行[round]和[clamp]
   double _keepBoundaryToRoundAndClamp(
@@ -357,8 +359,9 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     );
   }
 
-  Coordinate<Enum>? hitTestCoordinate(Offset position) => canDragCoordinates
-      ?.firstWhereOrNull((coordinate) => coordinate.hitTest(position));
+  Coordinate<Enum>? hitTestCoordinate(Offset position) =>
+      canDragCoordinates?.firstWhereOrNull(
+          (Coordinate<Enum> coordinate) => coordinate.hitTest(position));
 
   /// Y轴值
   late List<int> yAxis;
@@ -411,7 +414,7 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       yAxisLength += 1;
     }
 
-    yAxis = List.generate(
+    yAxis = List<int>.generate(
       yAxisLength,
       (int index) => widget.yAxisMinValue + index * widget.yAxisDivisions,
       growable: false,
@@ -431,11 +434,14 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     coordinatesGroup = widget.allCoordinates
         .fold<Map<Enum, List<Coordinate<Enum>>>>(
           <Enum, List<Coordinate<Enum>>>{},
-          (coordinatesGroupMap, coordinate) {
+          (Map<Enum, List<Coordinate<Enum>>> coordinatesGroupMap,
+              Coordinate<Enum> coordinate) {
             if (coordinatesGroupMap.containsKey(coordinate.type)) {
               coordinatesGroupMap[coordinate.type]!.add(coordinate);
             } else {
-              coordinatesGroupMap[coordinate.type] = [coordinate];
+              coordinatesGroupMap[coordinate.type] = <Coordinate<Enum>>[
+                coordinate
+              ];
             }
 
             return coordinatesGroupMap;
@@ -485,10 +491,10 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     }
 
     if (oldWidget.allCoordinates
-            .map((coordinates) => coordinates.hashCode)
+            .map((Coordinate<Enum> coordinates) => coordinates.hashCode)
             .join() !=
         widget.allCoordinates
-            .map((coordinates) => coordinates.hashCode)
+            .map((Coordinate<Enum> coordinates) => coordinates.hashCode)
             .join()) {
       _generateCoordinatesGroup();
 
@@ -548,7 +554,8 @@ class _SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     if (_currentSelectedCoordinate != null &&
         !widget.allCoordinates.contains(_currentSelectedCoordinate)) {
       _currentSelectedCoordinate = widget.allCoordinates.firstWhereOrNull(
-          (coordinate) => coordinate.id == _currentSelectedCoordinate!.id);
+          (Coordinate<Enum> coordinate) =>
+              coordinate.id == _currentSelectedCoordinate!.id);
     }
 
     if (markRebuild) {
