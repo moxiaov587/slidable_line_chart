@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 import '../theme/slidable_line_chart_theme.dart';
@@ -12,17 +10,24 @@ class CoordinatesOptions<Enum> {
   const CoordinatesOptions(
     this.type, {
     required this.values,
-    this.width = 12.0,
-    this.height = 12.0,
+    this.radius = 6.0,
     this.zoomedFactor = 3.0,
   });
 
+  /// Type of coordinates options.
   final Enum type;
+
+  /// Value of all coordinate points displayed in the coordinate system.
   final List<double> values;
 
-  final double width;
-  final double height;
+  /// Radius of coordinate points.
+  ///
+  /// Defaults to 6.0.
+  final double radius;
 
+  /// Increase the magnification factor of the touch area.
+  ///
+  /// Defaults to 3.0.
   final double zoomedFactor;
 
   @override
@@ -39,8 +44,7 @@ class CoordinatesOptions<Enum> {
       }
 
       return type == other.type &&
-          width == other.width &&
-          height == other.height &&
+          radius == other.radius &&
           zoomedFactor == other.zoomedFactor;
     }
 
@@ -51,8 +55,7 @@ class CoordinatesOptions<Enum> {
   int get hashCode => Object.hash(
         type,
         Object.hashAll(values),
-        width,
-        height,
+        radius,
         zoomedFactor,
       );
 }
