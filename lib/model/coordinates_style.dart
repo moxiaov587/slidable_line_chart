@@ -5,19 +5,24 @@ class CoordinatesStyle<Enum> {
   const CoordinatesStyle({
     required this.type,
     this.pointColor,
-    this.linkLineColor,
+    this.tapAreaColor,
+    this.lineColor,
     this.fillAreaColor,
   });
 
+  /// Type of coordinates style.
   final Enum type;
 
-  /// 坐标点颜色
+  /// Color of coordinate point.
   final Color? pointColor;
 
-  /// 连接线颜色
-  final Color? linkLineColor;
+  /// Color of the response area when the coordinate point is draggable.
+  final Color? tapAreaColor;
 
-  /// 覆盖区域颜色
+  /// Color of coordinate line.
+  final Color? lineColor;
+
+  /// Color of fill area.
   final Color? fillAreaColor;
 
   @override
@@ -25,7 +30,8 @@ class CoordinatesStyle<Enum> {
     return other is CoordinatesStyle<Enum> &&
         type == other.type &&
         pointColor == other.pointColor &&
-        linkLineColor == other.linkLineColor &&
+        tapAreaColor == other.tapAreaColor &&
+        lineColor == other.lineColor &&
         fillAreaColor == other.fillAreaColor;
   }
 
@@ -33,7 +39,8 @@ class CoordinatesStyle<Enum> {
   int get hashCode => Object.hash(
         type,
         pointColor,
-        linkLineColor,
+        tapAreaColor,
+        lineColor,
         fillAreaColor,
       );
 }
