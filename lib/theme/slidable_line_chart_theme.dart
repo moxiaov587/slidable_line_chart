@@ -2,26 +2,29 @@ import 'package:flutter/material.dart';
 
 part '../model/coordinates_style.dart';
 
-const Color kAxisLineColor = Colors.black;
-const TextStyle kAxisTextStyle = TextStyle(
-  fontSize: 11,
+const TextStyle kAxisLabelStyle = TextStyle(
+  fontSize: 12,
   color: Colors.black,
 );
+const Color kAxisLineColor = Colors.black;
+const double kAxisLineWidth = 1.0;
 const Color kGridLineColor = Colors.blueGrey;
+const double kGridLineWidth = 0.5;
+const bool kShowTapArea = true;
 const Color kTapAreaColor = Colors.red;
 const Color kDefaultCoordinatePointColor = Colors.blue;
-const Color kDefaultLinkLineColor = Colors.blueAccent;
+const Color kDefaultLineColor = Colors.blueAccent;
+const double kLineWidth = 2.0;
 const Color kDefaultFillAreaColor = Colors.blue;
-const TextStyle kCurrentValueTextStyle = TextStyle(
+const TextStyle kDisplayValueTextStyle = TextStyle(
   fontSize: 14,
   color: Colors.blueGrey,
 );
-const double kCurrentValueMarginBottom = 10.0;
+const double kDisplayValueMarginBottom = 10.0;
 const double kCheckOrCloseIconMarginTop = 30.0;
-const double kCheckOrCloseIconSize = 10.0;
-const double kCloseSize = 4.0;
-const Color kCheckBackground = Colors.blue;
-const Color kCloseBackground = Colors.red;
+const double kIndicatorRadius = 5.0;
+const Color kCheckBackgroundColor = Colors.blue;
+const Color kCloseBackgroundColor = Colors.red;
 const Color kCheckColor = Colors.white;
 const Color kCloseColor = Colors.white;
 
@@ -29,66 +32,151 @@ const Color kCloseColor = Colors.white;
 class SlidableLineChartThemeData<Enum> {
   const SlidableLineChartThemeData({
     this.coordinatesStyleList,
-    this.axisTextStyle,
+    this.axisLabelStyle,
     this.axisLineColor,
+    this.axisLineWidth,
     this.gridLineColor,
-    this.tapAreaColor,
+    this.gridLineWidth,
+    this.showTapArea,
+    this.defaultTapAreaColor,
     this.defaultCoordinatePointColor,
-    this.defaultLinkLineColor,
+    this.defaultLineColor,
+    this.lineWidth,
     this.defaultFillAreaColor,
-    this.currentValueTextStyle,
-    this.currentValueMarginBottom = kCurrentValueMarginBottom,
-    this.checkOrCloseIconMarginTop = kCheckOrCloseIconMarginTop,
-    this.checkOrCloseIconSize = kCheckOrCloseIconSize,
-    this.closeSize = kCloseSize,
-    this.checkBackground,
-    this.closeBackground,
+    this.displayValueTextStyle,
+    this.displayValueMarginBottom,
+    this.checkOrCloseIconMarginTop,
+    this.indicatorRadius,
+    this.checkBackgroundColor,
+    this.closeBackgroundColor,
     this.checkColor,
     this.closeColor,
   });
 
+  /// All coordinates style list.
+  ///
+  /// Can specify a style for each type of coordinates individually.
+  ///
+  /// The latter overrides the former when style of the same type exists.
   final List<CoordinatesStyle<Enum>>? coordinatesStyleList;
 
-  /// 坐标轴文本样式
-  final TextStyle? axisTextStyle;
+  /// Axis label style for the coordinate system.
+  ///
+  /// If this value are null, then [kAxisLabelStyle] will be used.
+  final TextStyle? axisLabelStyle;
 
-  /// 坐标轴颜色
+  /// Axis color for the coordinate system.
+  ///
+  /// If this value are null, then [kAxisLineColor] will be used.
   final Color? axisLineColor;
 
-  /// 坐标系网格颜色
+  /// Axis width for the coordinate system.
+  ///
+  /// If this value are null, then [kAxisLineWidth] will be used.
+  final double? axisLineWidth;
+
+  /// Grid line color for the coordinate system.
+  ///
+  /// If this value are null, then [kGridLineColor] will be used.
   final Color? gridLineColor;
 
-  /// 触摸区域颜色
-  final Color? tapAreaColor;
+  /// Grid line width for the coordinate system.
+  ///
+  /// If this value are null, then [kGridLineWidth] will be used.
+  final double? gridLineWidth;
 
-  /// 坐标点颜色
+  /// Default coordinate point color on the all coordinates.
+  ///
+  /// Used to set styles in batches.
+  ///
+  /// If [CoordinatesStyle.pointColor] and this value are null, then
+  /// [kDefaultCoordinatePointColor] will be used.
   final Color? defaultCoordinatePointColor;
 
-  /// 连接线颜色
-  final Color? defaultLinkLineColor;
+  /// Display a circular area that can respond to a user touch.
+  ///
+  /// If this value are null, then [kShowTapArea] will be used.
+  final bool? showTapArea;
 
-  /// 覆盖区域颜色
+  /// Default draggable coordinate point response area color.
+  ///
+  /// Used to set styles in batches.
+  ///
+  /// If [CoordinatesStyle.tapAreaColor], [CoordinatesStyle.pointColor] and this value
+  /// are null, then [kTapAreaColor].withOpacity(.2) will be used.
+  final Color? defaultTapAreaColor;
+
+  /// Default color of the line on the all coordinates.
+  ///
+  /// Used to set styles in batches.
+  ///
+  /// If [CoordinatesStyle.lineColor] and this value are null, then
+  /// [kDefaultLineColor] will be used.
+  final Color? defaultLineColor;
+
+  /// Line width on the all coordinates.
+  ///
+  /// If this value are null, then [kLineWidth] will be used.
+  final double? lineWidth;
+
+  /// Default fill area color of the line on the all coordinates.
+  ///
+  /// Used to set styles in batches.
+  ///
+  /// If [CoordinatesStyle.fillAreaColor] and this value are null, then
+  /// [kDefaultFillAreaColor] will be used.
   final Color? defaultFillAreaColor;
 
-  /// 当前值文本样式
-  final TextStyle? currentValueTextStyle;
+  /// Text style for display value on the coordinate system.
+  ///
+  /// If this value are null, then [kDisplayValueTextStyle] will be used.
+  final TextStyle? displayValueTextStyle;
 
-  final double currentValueMarginBottom;
+  /// Margin bottom for display value on the coordinate system.
+  ///
+  /// If this value are null, then [kDisplayValueMarginBottom] will be used.
+  final double? displayValueMarginBottom;
 
-  final double checkOrCloseIconMarginTop;
-  final double checkOrCloseIconSize;
-  final double closeSize;
-  final Color? checkBackground;
-  final Color? closeBackground;
+  /// Margin top for check or close indicator on the coordinate system.
+  ///
+  /// If this value are null, then [kCheckOrCloseIconMarginTop] will be used.
+  final double? checkOrCloseIconMarginTop;
+
+  /// Radius for check or close indicator on the coordinate system.
+  ///
+  /// If this value are null, then [kIndicatorRadius] will be used.
+  final double? indicatorRadius;
+
+  /// Background color for check indicator on the coordinate system.
+  ///
+  /// If this value are null, then [kCheckBackgroundColor] will be used.
+  final Color? checkBackgroundColor;
+
+  /// Background color for close indicator on the coordinate system.
+  ///
+  /// If this value are null, then [kCloseBackgroundColor] will be used.
+  final Color? closeBackgroundColor;
+
+  /// Color for check symbol on the coordinate system.
+  ///
+  /// If this value are null, then [kCheckColor] will be used.
   final Color? checkColor;
+
+  /// Color for close symbol on the coordinate system.
+  ///
+  /// If this value are null, then [kCloseColor] will be used.
   final Color? closeColor;
 
-  Map<Enum, CoordinatesStyle<Enum>> get coordinatesStyleMap =>
-      <Enum, CoordinatesStyle<Enum>>{
-        for (final CoordinatesStyle<Enum> item
-            in coordinatesStyleList ?? <CoordinatesStyle<Enum>>[])
-          item.type: item
-      };
+  Map<Enum, CoordinatesStyle<Enum>>? get coordinatesStyleMap {
+    if (coordinatesStyleList == null || coordinatesStyleList!.isEmpty) {
+      return null;
+    }
+
+    return <Enum, CoordinatesStyle<Enum>>{
+      for (final CoordinatesStyle<Enum> item in coordinatesStyleList!)
+        item.type: item
+    };
+  }
 
   @override
   bool operator ==(Object other) {
@@ -98,20 +186,21 @@ class SlidableLineChartThemeData<Enum> {
       }
 
       if (coordinatesStyleList == null || other.coordinatesStyleList == null) {
-        return axisTextStyle == other.axisTextStyle &&
+        return axisLabelStyle == other.axisLabelStyle &&
             axisLineColor == other.axisLineColor &&
             gridLineColor == other.gridLineColor &&
-            tapAreaColor == other.tapAreaColor &&
+            showTapArea == other.showTapArea &&
+            defaultTapAreaColor == other.defaultTapAreaColor &&
             defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
-            defaultLinkLineColor == other.defaultLinkLineColor &&
+            defaultLineColor == other.defaultLineColor &&
+            lineWidth == other.lineWidth &&
             defaultFillAreaColor == other.defaultFillAreaColor &&
-            other.currentValueTextStyle == currentValueTextStyle &&
-            other.currentValueMarginBottom == currentValueMarginBottom &&
+            other.displayValueTextStyle == displayValueTextStyle &&
+            other.displayValueMarginBottom == displayValueMarginBottom &&
             other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
-            other.checkOrCloseIconSize == checkOrCloseIconSize &&
-            other.closeSize == closeSize &&
-            other.checkBackground == checkBackground &&
-            other.closeBackground == closeBackground &&
+            other.indicatorRadius == indicatorRadius &&
+            other.checkBackgroundColor == checkBackgroundColor &&
+            other.closeBackgroundColor == closeBackgroundColor &&
             other.checkColor == checkColor &&
             other.closeColor == closeColor;
       }
@@ -122,20 +211,21 @@ class SlidableLineChartThemeData<Enum> {
         }
       }
 
-      return axisTextStyle == other.axisTextStyle &&
+      return axisLabelStyle == other.axisLabelStyle &&
           axisLineColor == other.axisLineColor &&
           gridLineColor == other.gridLineColor &&
-          tapAreaColor == other.tapAreaColor &&
+          showTapArea == other.showTapArea &&
+          defaultTapAreaColor == other.defaultTapAreaColor &&
           defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
-          defaultLinkLineColor == other.defaultLinkLineColor &&
+          defaultLineColor == other.defaultLineColor &&
+          lineWidth == other.lineWidth &&
           defaultFillAreaColor == other.defaultFillAreaColor &&
-          other.currentValueTextStyle == currentValueTextStyle &&
-          other.currentValueMarginBottom == currentValueMarginBottom &&
+          other.displayValueTextStyle == displayValueTextStyle &&
+          other.displayValueMarginBottom == displayValueMarginBottom &&
           other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
-          other.checkOrCloseIconSize == checkOrCloseIconSize &&
-          other.closeSize == closeSize &&
-          other.checkBackground == checkBackground &&
-          other.closeBackground == closeBackground &&
+          other.indicatorRadius == indicatorRadius &&
+          other.checkBackgroundColor == checkBackgroundColor &&
+          other.closeBackgroundColor == closeBackgroundColor &&
           other.checkColor == checkColor &&
           other.closeColor == closeColor;
     }
@@ -148,20 +238,21 @@ class SlidableLineChartThemeData<Enum> {
         coordinatesStyleList != null
             ? Object.hashAll(coordinatesStyleList!)
             : null,
-        axisTextStyle,
+        axisLabelStyle,
         axisLineColor,
         gridLineColor,
-        tapAreaColor,
+        showTapArea,
+        defaultTapAreaColor,
         defaultCoordinatePointColor,
-        defaultLinkLineColor,
+        defaultLineColor,
+        lineWidth,
         defaultFillAreaColor,
-        currentValueTextStyle,
-        currentValueMarginBottom,
+        displayValueTextStyle,
+        displayValueMarginBottom,
         checkOrCloseIconMarginTop,
-        checkOrCloseIconSize,
-        closeSize,
-        checkBackground,
-        closeBackground,
+        indicatorRadius,
+        checkBackgroundColor,
+        closeBackgroundColor,
         checkColor,
         closeColor,
       );
