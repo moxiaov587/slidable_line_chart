@@ -18,8 +18,7 @@ class Coordinates<Enum> {
             .map(
               (double value) => Coordinate(
                 initialValue: value,
-                width: options.width,
-                height: options.height,
+                radius: options.radius,
                 zoomedFactor: options.zoomedFactor,
               ),
             )
