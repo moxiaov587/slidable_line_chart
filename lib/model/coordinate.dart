@@ -6,34 +6,43 @@ class Coordinate {
     required this.initialValue,
     this.value,
     this.offset = Offset.zero,
-    required this.width,
-    required this.height,
+    required this.radius,
     required this.zoomedFactor,
-  });
+  }) : _zoomedRadius = radius * zoomedFactor;
 
+  /// The initial value of the coordinate point.
+  ///
+  /// Used to reset display value.
   final double initialValue;
-  final double? value;
-  final Offset offset;
-  final double width;
-  final double height;
 
+  /// Drag with the user to change the value.
+  final double? value;
+
+  /// The center of the coordinate point.
+  final Offset offset;
+
+  /// The radius of the coordinate point.
+  final double radius;
+
+  /// Increase the magnification factor of the touch area.
   final double zoomedFactor;
 
-  double get currentValue => value ?? initialValue;
+  /// Zoomed radius of coordinate points.
+  final double _zoomedRadius;
 
-  Rect get rect => Rect.fromCenter(
+  /// The value displayed in the coordinate system.
+  double get displayValue => value ?? initialValue;
+
+  /// Rect of coordinate points.
+  Rect get rect => Rect.fromCircle(
         center: offset,
-        width: width,
-        height: height,
+        radius: radius,
       );
 
-  /// 放大的[Rect]
-  ///
-  /// 用于增大触摸生效的判定区域
-  Rect get zoomedRect => Rect.fromCenter(
+  /// Zoomed rect of coordinate points.
+  Rect get zoomedRect => Rect.fromCircle(
         center: offset,
-        width: min(kMinInteractiveDimension, width * zoomedFactor),
-        height: min(kMinInteractiveDimension, height * zoomedFactor),
+        radius: _zoomedRadius,
       );
 
   bool hitTest(Offset position) => zoomedRect.contains(position);
@@ -49,8 +58,7 @@ class Coordinate {
   Coordinate copyWith({
     Offset? offset,
     double? value,
-    double? width,
-    double? height,
+    double? radius,
     double? zoomedFactor,
     bool enforceOverrideValue = false,
   }) =>
@@ -58,8 +66,7 @@ class Coordinate {
         initialValue: initialValue,
         offset: offset ?? this.offset,
         value: enforceOverrideValue ? value : value ?? this.value,
-        width: width ?? this.width,
-        height: height ?? this.height,
+        radius: radius ?? this.radius,
         zoomedFactor: zoomedFactor ?? this.zoomedFactor,
       );
 
@@ -68,8 +75,7 @@ class Coordinate {
         initialValue,
         offset,
         value,
-        width,
-        height,
+        radius,
         zoomedFactor,
       );
 
@@ -79,7 +85,6 @@ class Coordinate {
       other.initialValue == initialValue &&
       other.offset == offset &&
       other.value == value &&
-      other.width == width &&
-      other.height == height &&
+      other.radius == radius &&
       other.zoomedFactor == zoomedFactor;
 }
