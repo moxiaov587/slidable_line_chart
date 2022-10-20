@@ -1,221 +1,119 @@
 import 'dart:ui';
 
-import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 
-import 'model/coordinate.dart';
+import 'model/coordinates_options.dart';
+import 'theme/slidable_line_chart_theme.dart';
 
-typedef AllCoordinatesOffsetsInitializationCompleted = void Function();
+typedef CoordinateDisplayValueChanged = bool Function(double value);
 
-/// 返回bool值渲染对应图标
-typedef DrawCheckOrClose = bool Function(double value);
+typedef GetXAxisTickLineWidth = double Function(double chartWidth);
 
-typedef GetCoordinateStyleByType<Enum> = CoordinateStyle? Function(Enum type);
-typedef AdjustLocalPosition = Offset Function(
-  Offset localPosition, {
-  required double chartHeight,
-});
-
-typedef GetXAxisScaleOffsetValue = double Function(double chartWidth);
-
-typedef GetYAxisScaleOffsetValue = double Function(double chartHeight);
-
-typedef GetYAxisRealValue2OffsetValueFactor = double Function(
-    double chartWidth);
-
-typedef GetYAxisOffsetValueWithinDragRange = double Function(
-  double dy, {
-  required double chartHeight,
-  required double yAxisRealValue2OffsetValueFactor,
-  int yAxisDivisions,
-});
-
-typedef CurrentValue2YAxisOffsetValue = double Function(
-  double currentValue, {
-  required double chartHeight,
-  required double yAxisRealValue2OffsetValueFactor,
-  int yAxisDivisions,
-});
-
-typedef YAxisOffsetValue2CurrentValue = double Function(
-  double yOffset, {
-  required double yAxisRealValue2OffsetValueFactor,
-});
+typedef GetYAxisTickLineHeight = double Function(double chartHeight);
 
 class CoordinateSystemPainter<Enum> extends CustomPainter {
   CoordinateSystemPainter({
-    required this.animationController,
-    required this.coordinatesGroup,
-    required this.allCoordinatesOffsetsUninitialized,
-    required this.otherCoordinatesGroup,
-    required this.hasCanDragCoordinates,
-    required this.canDragCoordinates,
+    required this.slidableCoordinatesAnimationController,
+    required this.otherCoordinatesAnimationController,
+    required this.slidableCoordinateType,
+    required this.coordinatesMap,
     required this.xAxis,
     required this.yAxis,
-    required this.yAxisDivisions,
-    required this.yAxisMaxValue,
-    required this.yAxisMinValue,
-    required this.reversedYAxis,
-    required this.onlyRenderEvenYAxisText,
+    required this.min,
+    required this.max,
+    required this.maxOffsetValueOnYAxisSlidingArea,
     required this.coordinateSystemOrigin,
-    required this.linkLineWidth,
-    required this.axisTextStyle,
-    required this.axisLineColor,
-    required this.gridLineColor,
-    required this.defaultAxisPointColor,
-    required this.defaultLinkLineColor,
-    required this.defaultFillAreaColor,
-    required this.tapAreaColor,
-    required this.enforceStepOffset,
-    required this.showTapArea,
-    required this.allCoordinatesOffsetsInitializationCompleted,
-    required this.drawCheckOrClose,
-    required this.getCoordinateStyleByType,
-    required this.adjustLocalPosition,
-    required this.getXAxisScaleOffsetValue,
-    required this.getYAxisScaleOffsetValue,
-    required this.getYAxisRealValue2OffsetValueFactor,
-    required this.getYAxisOffsetValueWithinDragRange,
-    required this.currentValue2YAxisOffsetValue,
-    required this.yAxisOffsetValue2CurrentValue,
-  }) : super(repaint: animationController);
+    required this.divisions,
+    required this.reversed,
+    required this.onlyRenderEvenAxisLabel,
+    required this.slidableLineChartThemeData,
+    required this.onDrawCheckOrClose,
+    required this.getXAxisTickLineWidth,
+    required this.getYAxisTickLineHeight,
+  }) : super(
+          repaint: Listenable.merge(
+            <AnimationController?>[
+              slidableCoordinatesAnimationController,
+              otherCoordinatesAnimationController,
+            ],
+          ),
+        );
 
-  final AnimationController? animationController;
+  final AnimationController? slidableCoordinatesAnimationController;
 
-  final List<List<Coordinate<Enum>>> coordinatesGroup;
+  final AnimationController? otherCoordinatesAnimationController;
 
-  final bool allCoordinatesOffsetsUninitialized;
+  final Enum? slidableCoordinateType;
 
-  final List<List<Coordinate<Enum>>> otherCoordinatesGroup;
+  final Map<Enum, Coordinates<Enum>> coordinatesMap;
 
-  final bool hasCanDragCoordinates;
-
-  final List<Coordinate<Enum>>? canDragCoordinates;
-
-  /// X轴值
   final List<String> xAxis;
 
-  /// Y轴最小值
-  final int yAxisMinValue;
-
-  /// Y轴最大值
-  final int yAxisMaxValue;
-
-  /// Y轴分隔值
-  final int yAxisDivisions;
-
-  /// 反转Y轴
-  final bool reversedYAxis;
-
-  /// 只渲染偶数项的Y轴文本
-  final bool onlyRenderEvenYAxisText;
-
-  /// Y轴值
   final List<int> yAxis;
 
-  /// 坐标系原点
+  final int min;
+
+  final int max;
+
+  final double maxOffsetValueOnYAxisSlidingArea;
+
   final Offset coordinateSystemOrigin;
 
-  /// 连接线的宽度
-  final double linkLineWidth;
+  final int divisions;
 
-  /// 坐标轴文本样式
-  final TextStyle? axisTextStyle;
+  final bool reversed;
 
-  /// 坐标轴颜色
-  final Color? axisLineColor;
+  final bool onlyRenderEvenAxisLabel;
 
-  /// 坐标系网格颜色
-  final Color? gridLineColor;
+  final SlidableLineChartThemeData<Enum>? slidableLineChartThemeData;
 
-  /// 坐标点颜色
-  final Color? defaultAxisPointColor;
+  final CoordinateDisplayValueChanged? onDrawCheckOrClose;
 
-  /// 连接线颜色
-  final Color? defaultLinkLineColor;
+  final GetXAxisTickLineWidth getXAxisTickLineWidth;
 
-  /// 覆盖区域颜色
-  final Color? defaultFillAreaColor;
+  final GetYAxisTickLineHeight getYAxisTickLineHeight;
 
-  /// 触摸区域颜色
-  final Color? tapAreaColor;
+  Color get defaultCoordinatePointColor =>
+      slidableLineChartThemeData?.defaultCoordinatePointColor ??
+      kDefaultCoordinatePointColor;
+  Color get defaultLineColor =>
+      slidableLineChartThemeData?.defaultLineColor ?? kDefaultLineColor;
+  Color get defaultFillAreaColor =>
+      slidableLineChartThemeData?.defaultFillAreaColor ??
+      slidableLineChartThemeData?.defaultCoordinatePointColor ??
+      kDefaultFillAreaColor;
 
-  /// 强制步进偏移
-  final bool enforceStepOffset;
-
-  /// 显示触摸区域
-  /// 一般用于调试
-  final bool showTapArea;
-
-  final DrawCheckOrClose? drawCheckOrClose;
-
-  final AllCoordinatesOffsetsInitializationCompleted
-      allCoordinatesOffsetsInitializationCompleted;
-
-  final GetCoordinateStyleByType<Enum> getCoordinateStyleByType;
-
-  final AdjustLocalPosition adjustLocalPosition;
-
-  final GetXAxisScaleOffsetValue getXAxisScaleOffsetValue;
-
-  final GetYAxisScaleOffsetValue getYAxisScaleOffsetValue;
-
-  final GetYAxisRealValue2OffsetValueFactor getYAxisRealValue2OffsetValueFactor;
-
-  final GetYAxisOffsetValueWithinDragRange getYAxisOffsetValueWithinDragRange;
-
-  final CurrentValue2YAxisOffsetValue currentValue2YAxisOffsetValue;
-
-  final YAxisOffsetValue2CurrentValue yAxisOffsetValue2CurrentValue;
-
-  Color get coordinatePointColor => defaultAxisPointColor ?? Colors.blueGrey;
-  Color get linkLineColor => defaultLinkLineColor ?? Colors.blue;
-  Color get fillAreaColor =>
-      defaultFillAreaColor ??
-      defaultAxisPointColor ??
-      Colors.blue.withOpacity(.3);
-
-  /// 文本绘制
   final TextPainter _textPainter =
       TextPainter(textDirection: TextDirection.ltr);
 
-  /// 坐标轴线画笔
   late final Paint axisLinePaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 1
-    ..color = axisLineColor ?? Colors.black;
+    ..color = slidableLineChartThemeData?.axisLineColor ?? kAxisLineColor
+    ..strokeWidth = slidableLineChartThemeData?.axisLineWidth ?? kAxisLineWidth;
 
-  /// 坐标网格线画笔
   late final Paint gridLinePaint = Paint()
     ..style = PaintingStyle.stroke
-    ..color = gridLineColor ?? Colors.grey
-    ..strokeWidth = 0.5;
+    ..color = slidableLineChartThemeData?.gridLineColor ?? kGridLineColor
+    ..strokeWidth = slidableLineChartThemeData?.gridLineWidth ?? kGridLineWidth;
 
-  /// 坐标点画笔
-  late final Paint coordinatePointPaint = Paint()..color = coordinatePointColor;
+  final Paint coordinatePointPaint = Paint();
 
-  /// 连接线画笔
-  late final Paint linkLinePaint = Paint()
+  late final Paint linePaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = linkLineWidth
-    ..color = linkLineColor;
+    ..strokeWidth = slidableLineChartThemeData?.lineWidth ?? kLineWidth;
 
-  /// 范围区域画笔
-  late final Paint fillAreaPaint = Paint()..color = fillAreaColor;
+  final Paint fillAreaPaint = Paint();
 
-  /// 触控区域画笔
-  late final Paint tapAreaPaint = Paint()
-    ..color = tapAreaColor ?? Colors.red.withOpacity(.2);
+  final Paint tapAreaPaint = Paint();
 
   @override
   void paint(Canvas canvas, Size size) {
-    /// 将[canvas]原点偏移到左下角
+    // Move the [canvas] starting point to [coordinateSystemOrigin]
     canvas.translate(
       coordinateSystemOrigin.dx,
       size.height - coordinateSystemOrigin.dy,
     );
 
-    /// 坐标轴
     final Path axisLinePath = Path()
       ..moveTo(-coordinateSystemOrigin.dx, 0)
       ..relativeLineTo(size.width, 0)
@@ -224,132 +122,92 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     canvas.drawPath(axisLinePath, axisLinePaint);
 
-    final double xAxisScaleOffsetValue = getXAxisScaleOffsetValue(size.width);
+    final double xAxisTickLineWidth = getXAxisTickLineWidth(size.width);
 
-    drawXAxis(canvas, size, xAxisScaleOffsetValue: xAxisScaleOffsetValue);
+    drawXAxis(canvas, size, xAxisTickLineWidth: xAxisTickLineWidth);
     drawYAxis(canvas, size);
 
-    drawCoordinates(canvas, size, xAxisScaleOffsetValue: xAxisScaleOffsetValue);
+    drawCoordinates(canvas, size, xAxisTickLineWidth: xAxisTickLineWidth);
   }
 
-  /// 初始化[Coordinate]中的[offset]
-  /// 赋予正确的X轴坐标并将当前值转换成坐标值
-  void _initialAllCoordinatesOffsets(
-    Size size, {
-    required double xAxisScaleOffsetValue,
-    required double yAxisRealValue2OffsetValueFactor,
-  }) {
-    for (int i = 0; i < coordinatesGroup.length; i++) {
-      for (int j = 0; j < coordinatesGroup[i].length; j++) {
-        coordinatesGroup[i][j].offset = Offset(
-          (xAxisScaleOffsetValue / 2) + xAxisScaleOffsetValue * j,
-          currentValue2YAxisOffsetValue(
-            coordinatesGroup[i][j].currentValue - yAxisMinValue,
-            chartHeight: size.height,
-            yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
-          ),
-        );
-      }
-    }
-
-    allCoordinatesOffsetsInitializationCompleted.call();
-  }
-
-  /// 绘制坐标点和坐标线
   void drawCoordinates(
     Canvas canvas,
     Size size, {
-    required double xAxisScaleOffsetValue,
+    required double xAxisTickLineWidth,
   }) {
     canvas.save();
 
-    final double yAxisRealValue2OffsetValueFactor =
-        getYAxisRealValue2OffsetValueFactor(size.height);
-
-    if (allCoordinatesOffsetsUninitialized) {
-      _initialAllCoordinatesOffsets(
-        size,
-        xAxisScaleOffsetValue: xAxisScaleOffsetValue,
-        yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
-      );
-    }
-
-    /// 先绘制[otherCoordinatesGroup]使[canDragCoordinates]绘制在顶层
-    for (final List<Coordinate<Enum>> coordinates
-        in otherCoordinatesGroup.reversed) {
-      final CoordinateStyle? coordinateStyle =
-          getCoordinateStyleByType(coordinates.first.type);
-
-      drawLinkLine(
+    // Draw other coordinates first so that the slidable coordinates are drawn at
+    // the top level.
+    for (final Coordinates<Enum> coordinates in coordinatesMap.values) {
+      if (coordinates.type == slidableCoordinateType) {
+        continue; // Skip slidable coordinates.
+      }
+      drawLineAndFillArea(
         canvas,
+        animationController: otherCoordinatesAnimationController,
         coordinates: coordinates,
-        coordinateStyle: coordinateStyle,
+        coordinateStyle: coordinates.style,
       );
 
-      drawFillColor(
-        canvas,
-        coordinates: coordinates,
-        coordinateStyle: coordinateStyle,
-      );
-
-      for (final Coordinate<Enum> coordinate in coordinates) {
+      for (final Coordinate coordinate in coordinates.value) {
         coordinate.drawCoordinatePoint(
           canvas,
           coordinatePointPaint
             ..color =
-                coordinateStyle?.coordinatePointColor ?? coordinatePointColor,
+                coordinates.style?.pointColor ?? defaultCoordinatePointColor,
         );
       }
     }
 
-    if (hasCanDragCoordinates) {
-      final CoordinateStyle? coordinatesStyle =
-          getCoordinateStyleByType(canDragCoordinates!.first.type);
+    final Coordinates<Enum>? slidableCoordinates =
+        coordinatesMap[slidableCoordinateType];
 
-      drawLinkLine(
+    if (slidableCoordinates != null) {
+      drawLineAndFillArea(
         canvas,
-        coordinates: canDragCoordinates!,
-        coordinateStyle: coordinatesStyle,
+        animationController: slidableCoordinatesAnimationController,
+        coordinates: slidableCoordinates,
+        coordinateStyle: slidableCoordinates.style,
       );
 
-      drawFillColor(
-        canvas,
-        coordinates: canDragCoordinates!,
-        coordinateStyle: coordinatesStyle,
-      );
-
-      for (final Coordinate<Enum> coordinate in canDragCoordinates!) {
-        if (showTapArea) {
-          coordinate.drawTapArea(canvas, tapAreaPaint);
+      for (final Coordinate coordinate in slidableCoordinates.value) {
+        if (slidableLineChartThemeData?.showTapArea ?? kShowTapArea) {
+          coordinate.drawTapArea(
+            canvas,
+            tapAreaPaint
+              ..color = slidableCoordinates.style?.tapAreaColor ??
+                  slidableCoordinates.style?.pointColor?.withOpacity(.2) ??
+                  slidableLineChartThemeData?.defaultTapAreaColor ??
+                  kTapAreaColor.withOpacity(.2),
+          );
         }
 
         coordinate.drawCoordinatePoint(
           canvas,
           coordinatePointPaint
-            ..color =
-                coordinatesStyle?.coordinatePointColor ?? coordinatePointColor,
+            ..color = slidableCoordinates.style?.pointColor ??
+                defaultCoordinatePointColor,
         );
 
-        final double currentValue = yAxisOffsetValue2CurrentValue(
-          coordinate.offset.dy,
-          yAxisRealValue2OffsetValueFactor: yAxisRealValue2OffsetValueFactor,
-        );
-
-        coordinate.drawCurrentValueText(
+        _drawDisplayValueText(
           canvas,
+          dx: coordinate.offset.dx,
           chartHeight: size.height,
-          textPainter: _textPainter,
-          currentValue: currentValue,
+          displayValue: coordinate.displayValue,
         );
 
-        if (drawCheckOrClose != null) {
-          final bool result = drawCheckOrClose!.call(currentValue);
+        final bool? result = onDrawCheckOrClose?.call(coordinate.displayValue);
 
-          if (result) {
-            coordinate.drawCheck(canvas);
-          } else {
-            coordinate.drawClose(canvas);
-          }
+        switch (result) {
+          case null:
+            break;
+          case true:
+            _drawCheck(canvas, dx: coordinate.offset.dx);
+            break;
+          case false:
+            _drawClose(canvas, dx: coordinate.offset.dx);
+            break;
         }
       }
     }
@@ -357,130 +215,136 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     canvas.restore();
   }
 
-  /// 绘制连接线条
-  void drawLinkLine(
+  void drawLineAndFillArea(
     Canvas canvas, {
-    required List<Coordinate<Enum>> coordinates,
-    CoordinateStyle? coordinateStyle,
+    required AnimationController? animationController,
+    required Coordinates<Enum> coordinates,
+    CoordinatesStyle<Enum>? coordinateStyle,
   }) {
-    final Path linePath = coordinates.skip(1).fold<Path>(
-          Path()
-            ..moveTo(
-              coordinates.first.offset.dx,
-              coordinates.first.offset.dy,
-            ),
-          (Path path, Coordinate<Enum> coordinate) => path
-            ..lineTo(
-              coordinate.offset.dx,
-              coordinate.offset.dy,
-            ),
+    final Offset firstCoordinateOffset = coordinates.value.first.offset;
+
+    final Color finalFillAreaColor =
+        coordinateStyle?.fillAreaColor ?? defaultFillAreaColor;
+
+    final Path linePath = coordinates.value.skip(1).fold<Path>(
+          Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
+          (Path path, Coordinate coordinate) =>
+              path..lineTo(coordinate.offset.dx, coordinate.offset.dy),
         );
 
     final PathMetrics pathMetrics = linePath.computeMetrics();
 
     for (final PathMetric pathMetric in pathMetrics) {
+      final double progress =
+          pathMetric.length * (animationController?.value ?? 1);
+
+      final Path path = pathMetric.extractPath(0.0, progress);
+
       canvas.drawPath(
-        pathMetric.extractPath(
-            0, pathMetric.length * (animationController?.value ?? 1)),
-        linkLinePaint..color = coordinateStyle?.linkLineColor ?? linkLineColor,
+        path,
+        linePaint..color = coordinateStyle?.lineColor ?? defaultLineColor,
+      );
+
+      final Tangent? tangent = pathMetric.getTangentForOffset(progress);
+
+      final Path fillAreaPath = Path()
+        ..moveTo(firstCoordinateOffset.dx, 0.0)
+        ..addPath(path, Offset.zero)
+        ..lineTo(tangent?.position.dx ?? 0.0, 0.0)
+        ..lineTo(firstCoordinateOffset.dx, 0.0)
+        ..close();
+
+      canvas.drawPath(
+        fillAreaPath,
+        fillAreaPaint
+          ..shader = LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: <Color>[
+              finalFillAreaColor.withOpacity(0.2),
+              finalFillAreaColor,
+            ],
+          ).createShader(
+            Rect.fromLTRB(
+              firstCoordinateOffset.dx,
+              -maxOffsetValueOnYAxisSlidingArea,
+              coordinates.value.last.offset.dx,
+              -coordinateSystemOrigin.dy,
+            ),
+          ),
       );
     }
   }
 
-  /// 绘制范围颜色
-  void drawFillColor(
-    Canvas canvas, {
-    required List<Coordinate<Enum>> coordinates,
-    CoordinateStyle? coordinateStyle,
-  }) {
-    final Path path = coordinates.skip(1).foldIndexed<Path>(
-          Path()
-            ..moveTo(
-              coordinates.first.offset.dx,
-              0,
-            ),
-          (int index, Path path, Coordinate<Enum> coordinate) => path
-            ..addPolygon(
-              <Offset>[
-                /// 由于遍历时skip(1)
-                /// 所以此处的coordinates[index]就是当前coordinate的前一项
-                Offset(coordinates[index].offset.dx, 0),
-                coordinates[index].offset,
-                coordinate.offset,
-                Offset(coordinate.offset.dx, 0),
-              ],
-              false,
-            ),
-        );
-
-    final PathMetrics pathMetrics = path.computeMetrics();
-
-    for (final PathMetric pathMetric in pathMetrics) {
-      canvas.drawPath(
-        pathMetric.extractPath(
-          0,
-          pathMetric.length * (animationController?.value ?? 1),
-        ),
-        fillAreaPaint..color = coordinateStyle?.fillAreaColor ?? fillAreaColor,
-      );
-    }
-  }
-
-  /// 绘制X轴
   void drawXAxis(
     Canvas canvas,
     Size size, {
-    required double xAxisScaleOffsetValue,
+    required double xAxisTickLineWidth,
   }) {
     canvas.save();
 
-    canvas.translate(xAxisScaleOffsetValue, 0);
+    canvas.translate(xAxisTickLineWidth, 0);
+
+    final Offset axisLabelOffset = Offset(
+        -xAxisTickLineWidth / 2,
+        slidableLineChartThemeData?.axisLabelStyle?.fontSize ??
+            kAxisLabelStyle.fontSize!);
 
     for (int i = 0; i < xAxis.length; i++) {
-      _drawAxisText(
+      _drawAxisLabel(
         canvas,
         xAxis[i],
         alignment: Alignment.center,
-        offset: Offset(-xAxisScaleOffsetValue / 2, 10),
+        offset: axisLabelOffset,
       );
 
-      canvas.translate(xAxisScaleOffsetValue, 0);
+      canvas.translate(xAxisTickLineWidth, 0);
     }
 
     canvas.restore();
   }
 
-  /// 绘制Y轴
   void drawYAxis(Canvas canvas, Size size) {
     canvas.save();
 
-    final double yAxisScaleOffsetValue = getYAxisScaleOffsetValue(size.height);
+    final double yAxisTickLineHeight = getYAxisTickLineHeight(size.height);
 
-    for (int i = 0; i < yAxis.length; i++) {
-      // 第一条线有轴线，所以不必绘制坐标系线
-      if (i != 0) {
-        // 绘制坐标系线
-        canvas.drawLine(
-          Offset.zero,
-          Offset(size.width - coordinateSystemOrigin.dx, 0),
-          gridLinePaint,
-        );
-      }
+    final Offset axisLabelOffset = Offset(
+        -(slidableLineChartThemeData?.axisLabelStyle?.fontSize ??
+            kAxisLabelStyle.fontSize!),
+        0);
 
-      if (!onlyRenderEvenYAxisText || (onlyRenderEvenYAxisText && i.isEven)) {
-        _drawAxisText(
+    // The first line has an axis, so only text is drawn.
+    _drawAxisLabel(
+      canvas,
+      yAxis[0].toString(),
+      offset: axisLabelOffset,
+    );
+
+    canvas.translate(0, -yAxisTickLineHeight);
+
+    for (int i = 1; i < yAxis.length; i++) {
+      // Drawing coordinate line.
+      canvas.drawLine(
+        Offset.zero,
+        Offset(size.width - coordinateSystemOrigin.dx, 0),
+        gridLinePaint,
+      );
+
+      if (!onlyRenderEvenAxisLabel || (onlyRenderEvenAxisLabel && i.isEven)) {
+        _drawAxisLabel(
           canvas,
-          '${yAxis[i]}',
-          offset: const Offset(-10, 2),
+          yAxis[i].toString(),
+          offset: axisLabelOffset,
         );
       }
 
-      canvas.translate(0, -yAxisScaleOffsetValue);
+      canvas.translate(0, -yAxisTickLineHeight);
     }
     canvas.restore();
   }
 
-  void _drawAxisText(
+  void _drawAxisLabel(
     Canvas canvas,
     String text, {
     Alignment alignment = Alignment.centerRight,
@@ -488,11 +352,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   }) {
     final TextSpan textSpan = TextSpan(
       text: text,
-      style: axisTextStyle ??
-          const TextStyle(
-            fontSize: 11,
-            color: Colors.black,
-          ),
+      style: slidableLineChartThemeData?.axisLabelStyle ?? kAxisLabelStyle,
     );
 
     _textPainter.text = textSpan;
@@ -503,9 +363,108 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     final Offset offsetPos =
         Offset(-size.width / 2, -size.height / 2).translate(
       -size.width / 2 * alignment.x + offset.dx,
-      0.0 + offset.dy,
+      offset.dy,
     );
     _textPainter.paint(canvas, offsetPos);
+  }
+
+  void _drawDisplayValueText(
+    Canvas canvas, {
+    required double dx,
+    required double chartHeight,
+    required double displayValue,
+  }) {
+    final TextSpan textSpan = TextSpan(
+      text: displayValue.toString(),
+      style: slidableLineChartThemeData?.displayValueTextStyle ??
+          kDisplayValueTextStyle,
+    );
+
+    _textPainter.text = textSpan;
+    _textPainter.layout();
+
+    final Size size = _textPainter.size;
+
+    final Offset offsetPos =
+        Offset(-size.width / 2, -size.height / 2).translate(
+      dx,
+      -chartHeight -
+          (slidableLineChartThemeData?.displayValueMarginBottom ??
+              kDisplayValueMarginBottom), // Makes the display value top.
+    );
+    _textPainter.paint(canvas, offsetPos);
+  }
+
+  void _drawCheck(
+    Canvas canvas, {
+    required double dx,
+  }) {
+    final double x = dx;
+    final double y = slidableLineChartThemeData?.checkOrCloseIconMarginTop ??
+        kCheckOrCloseIconMarginTop;
+    final double radius =
+        slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
+
+    final Path checkPath = Path()
+      ..addPolygon(
+        <Offset>[
+          Offset(x - radius, y),
+          Offset(x - radius / 3, y + (radius - radius / 3)),
+          Offset(x + radius, y - radius * 2 / 3)
+        ],
+        false,
+      );
+
+    final Paint paint = Paint()
+      ..color = slidableLineChartThemeData?.checkBackgroundColor ??
+          kCheckBackgroundColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(x, y), radius * 2, paint);
+
+    canvas.drawPath(
+      checkPath,
+      paint
+        ..color = slidableLineChartThemeData?.checkColor ?? kCheckColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = radius * 0.4,
+    );
+  }
+
+  void _drawClose(
+    Canvas canvas, {
+    required double dx,
+  }) {
+    final double x = dx;
+    final double y = slidableLineChartThemeData?.checkOrCloseIconMarginTop ??
+        kCheckOrCloseIconMarginTop;
+    final double radius =
+        slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
+    final double size = radius * 0.8;
+
+    Paint paint = Paint()
+      ..color = slidableLineChartThemeData?.closeBackgroundColor ??
+          kCloseBackgroundColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(Offset(x, y), radius * 2, paint);
+
+    paint = paint
+      ..color = slidableLineChartThemeData?.closeColor ?? kCloseColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = radius * 0.4;
+
+    canvas.drawLine(
+      Offset(x - size, y - size),
+      Offset(x + size, y + size),
+      paint,
+    );
+
+    canvas.drawLine(
+      Offset(x + size, y - size),
+      Offset(x - size, y + size),
+      paint,
+    );
   }
 
   @override
