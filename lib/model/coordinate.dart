@@ -15,7 +15,7 @@ class Coordinate {
   /// Used to reset display value.
   final double initialValue;
 
-  /// Drag with the user to change the value.
+  /// Value that change as the user slides.
   final double? value;
 
   /// The center of the coordinate point.

@@ -16,7 +16,7 @@ class CoordinatesStyle<Enum> {
   /// Color of coordinate point.
   final Color? pointColor;
 
-  /// Color of the response area when the coordinate point is draggable.
+  /// Color of the response area when the coordinate point is slidable.
   final Color? tapAreaColor;
 
   /// Color of coordinate line.

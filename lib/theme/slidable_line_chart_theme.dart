@@ -98,7 +98,7 @@ class SlidableLineChartThemeData<Enum> {
   /// If this value are null, then [kShowTapArea] will be used.
   final bool? showTapArea;
 
-  /// Default draggable coordinate point response area color.
+  /// Default slidable coordinate point response area color.
   ///
   /// Used to set styles in batches.
   ///
