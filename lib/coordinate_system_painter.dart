@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'model/coordinates_options.dart';
 import 'theme/slidable_line_chart_theme.dart';
 
-typedef CoordinateDisplayValueChanged = bool Function(double value);
+typedef OnDrawIndicator = bool Function(double value);
 
 typedef GetXAxisTickLineWidth = double Function(double chartWidth);
 
@@ -67,7 +67,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
   final SlidableLineChartThemeData<Enum>? slidableLineChartThemeData;
 
-  final CoordinateDisplayValueChanged? onDrawCheckOrClose;
+  final OnDrawIndicator? onDrawCheckOrClose;
 
   final GetXAxisTickLineWidth getXAxisTickLineWidth;
 

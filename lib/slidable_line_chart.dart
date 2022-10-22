@@ -39,7 +39,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
             'slideAccuracy($slideAccuracy) must be a multiple of 0.01.'),
         super(key: key);
 
-  /// Type of coordinates that can slide.
+  /// The type of coordinates the user can slide.
   ///
   /// Defaults to null.
   final Enum? slidableCoordinateType;
@@ -50,7 +50,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// [SlidableLineChartState._coordinatesMap].
   final List<CoordinatesOptions<Enum>> coordinatesOptionsList;
 
-  /// Text display on X-axis.
+  /// Labels displayed on the x-axis.
   final List<String> xAxis;
 
   /// Coordinate system origin offset value.
@@ -58,7 +58,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Defaults to Offset(6.0, 6.0).
   final Offset coordinateSystemOrigin;
 
-  /// The minimum value the user can drug.
+  /// The minimum value that the user can slide to.
   ///
   /// Must be less than or equal to [max].
   ///
@@ -71,7 +71,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// See [SlidableLineChartState._generateYAxis].
   final int min;
 
-  /// The maximum value the user can drug.
+  /// The maximum value that the user can slide to.
   ///
   /// Must be greater than or equal to [min].
   ///
@@ -84,7 +84,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// See [SlidableLineChartState._generateYAxis].
   final int max;
 
-  /// The number of discrete divisions.
+  /// The division value of y-axis.
   ///
   /// Defaults to 1. Must be less than or equal to 0.
   ///
@@ -92,14 +92,14 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// [min], [max].
   final int divisions;
 
-  /// The minimum value for each sliding by the user.
+  /// The minimum value for each slide by the user.
   ///
-  /// Must be greater than or equal to 0.01.
+  /// Must be a multiple of 0.01.
   ///
   /// If this value are null, then [divisions] will be used.
   final double? slideAccuracy;
 
-  /// If true the coordinate system is to be arrange from low to high.
+  /// Whether the coordinate system is reversed.
   ///
   /// Defaults to false.
   ///
@@ -107,7 +107,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// See [SlidableLineChartState._generateYAxis].
   final bool reversed;
 
-  /// If true the render Y-axis label for even items only.
+  /// Whether the y-axis label renders only even items.
   ///
   /// Defaults to true.
   ///
@@ -115,7 +115,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// See [SlidableLineChartState._generateYAxis].
   final bool onlyRenderEvenAxisLabel;
 
-  /// If true the animation is triggered when the coordinate system is initialized.
+  /// Whether the coordinate system triggers animation when initialized.
   ///
   /// Defaults to true.
   final bool enableInitializationAnimation;
@@ -125,7 +125,8 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Defaults to Duration(seconds: 1).
   final Duration initializationAnimationDuration;
 
-  /// Called when the user slides the coordinate.
+  /// Called when the user slides coordinate, the return value determines the
+  /// indicator type.
   ///
   /// The return value is used to draw a check or close indicator
   /// below the coordinate system.
@@ -133,9 +134,9 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Defaults to null, nothing.
   ///
   /// See [CoordinateSystemPainter.drawCoordinates].
-  final CoordinateDisplayValueChanged? onDrawCheckOrClose;
+  final OnDrawIndicator? onDrawCheckOrClose;
 
-  /// Called when the user slides the coordinate.
+  /// Called when the user slides coordinate.
   ///
   /// See also:
   ///
@@ -155,7 +156,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///    sliding the coordinate.
   final DisplayValuesChanged? onChangeStart;
 
-  /// Called when the user stops sliding the coordinate.
+  /// Called when the user stops sliding coordinate.
   ///
   /// See also:
   ///
@@ -342,7 +343,11 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       result = _yAxisMaxValue - dyLogicRowsNumberOnSlidingArea * _slideAccuracy;
     }
 
-    return double.parse(result.toStringAsFixed(2));
+    return double.parse(
+      result.toStringAsFixed(
+        2,
+      ), // Reduce calculation error and limit decimal place precision of display value.
+    );
   }
 
   /// Return null when user does not select or [_slidableCoordinates] is null,
