@@ -24,7 +24,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     required this.max,
     this.coordinateSystemOrigin = const Offset(6.0, 6.0),
     this.divisions = 1,
-    this.slideAccuracy,
+    this.slidePrecision,
     this.reversed = false,
     this.onlyRenderEvenAxisLabel = true,
     this.enableInitializationAnimation = true,
@@ -35,8 +35,8 @@ class SlidableLineChart<Enum> extends StatefulWidget {
     this.onChangeEnd,
   })  : assert(max > min, 'max($max) must be larger than min($min)'),
         assert(divisions > 0, 'divisions($divisions) must be larger than 0'),
-        assert(slideAccuracy == null || (slideAccuracy * 100) % 1 == 0,
-            'slideAccuracy($slideAccuracy) must be a multiple of 0.01.'),
+        assert(slidePrecision == null || (slidePrecision * 100) % 1 == 0,
+            'slidePrecision($slidePrecision) must be a multiple of 0.01.'),
         super(key: key);
 
   /// The type of coordinates the user can slide.
@@ -97,7 +97,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Must be a multiple of 0.01.
   ///
   /// If this value are null, then [divisions] will be used.
-  final double? slideAccuracy;
+  final double? slidePrecision;
 
   /// Whether the coordinate system is reversed.
   ///
@@ -178,7 +178,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// The index of the current sliding coordinate.
   int? _currentSlideCoordinateIndex;
 
-  num get _slideAccuracy => widget.slideAccuracy ?? widget.divisions;
+  num get _slidePrecision => widget.slidePrecision ?? widget.divisions;
 
   /// Slidable coordinates.
   ///
@@ -249,8 +249,8 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
   /// Minimum number of logical rows in the sliding area.
   ///
-  /// When [SlidableLineChart.divisions] is 1 and [_slideAccuracy] is 0.1,
-  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slideAccuracy].
+  /// When [SlidableLineChart.divisions] is 1 and [_slidePrecision] is 0.1,
+  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slidePrecision].
   ///
   /// Used to limit the range number of logical rows the user can slide.
   ///
@@ -259,8 +259,8 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
   /// Maximum number of logical rows in the sliding area.
   ///
-  /// When [SlidableLineChart.divisions] is 1 and [_slideAccuracy] is 0.1,
-  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slideAccuracy].
+  /// When [SlidableLineChart.divisions] is 1 and [_slidePrecision] is 0.1,
+  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slidePrecision].
   ///
   /// Used to limit the range number of logical rows the user can slide.
   ///
@@ -319,8 +319,8 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   }
 
   /// Get the value displayed on the y-axis at the current position according
-  /// to the sliding accuracy.
-  double _getYAxisDisplayValueBySlidingAccuracy(
+  /// to the slide precision.
+  double _getYAxisDisplayValueBySlidePrecision(
     double dy, {
     required double chartHeight,
   }) {
@@ -338,9 +338,10 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     late double result;
 
     if (widget.reversed) {
-      result = dyLogicRowsNumberOnSlidingArea * _slideAccuracy + widget.min;
+      result = dyLogicRowsNumberOnSlidingArea * _slidePrecision + widget.min;
     } else {
-      result = _yAxisMaxValue - dyLogicRowsNumberOnSlidingArea * _slideAccuracy;
+      result =
+          _yAxisMaxValue - dyLogicRowsNumberOnSlidingArea * _slidePrecision;
     }
 
     return double.parse(
@@ -412,7 +413,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// Generate minimum and maximum values for the number of logical rows on the
   /// y-Axis sliding area.
   ///
-  /// When [SlidableLineChart.slideAccuracy] will be regenerated when changes.
+  /// When [SlidableLineChart.slidePrecision] will be regenerated when changes.
   void _generateMinAndMaxValuesForNumberOfLogicRowsOnYAxisSlidingArea([
     double? numberOfRowsDisplayedOnYAxis,
   ]) {
@@ -424,13 +425,13 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       _maxLogicRowsNumberOnSlidingArea =
           (numberOfRowsDisplayedOnYAxis - _numberOfRowsOnDerivedArea) *
               widget.divisions /
-              _slideAccuracy;
+              _slidePrecision;
     } else {
       _minLogicRowsNumberOnSlidingArea =
-          _numberOfRowsOnDerivedArea * widget.divisions / _slideAccuracy;
+          _numberOfRowsOnDerivedArea * widget.divisions / _slidePrecision;
 
       _maxLogicRowsNumberOnSlidingArea =
-          numberOfRowsDisplayedOnYAxis * widget.divisions / _slideAccuracy;
+          numberOfRowsDisplayedOnYAxis * widget.divisions / _slidePrecision;
     }
   }
 
@@ -603,7 +604,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       markRebuild = true;
     }
 
-    if (oldWidget.slideAccuracy != widget.slideAccuracy) {
+    if (oldWidget.slidePrecision != widget.slidePrecision) {
       _generateMinAndMaxValuesForNumberOfLogicRowsOnYAxisSlidingArea();
     }
 
@@ -752,7 +753,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
             onVerticalDragUpdate: (DragUpdateDetails details) {
               if (_currentSlideCoordinateIndex != null) {
                 final double displayValue =
-                    _getYAxisDisplayValueBySlidingAccuracy(
+                    _getYAxisDisplayValueBySlidePrecision(
                   details.localPosition.dy,
                   chartHeight: chartHeight,
                 );

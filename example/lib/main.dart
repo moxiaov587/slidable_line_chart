@@ -41,7 +41,7 @@ class TestData {
   final int divisions;
 }
 
-const List<double?> slideAccuracyList = [null, 1.0, 0.1, 0.01];
+const List<double?> slidePrecisionList = [null, 1.0, 0.1, 0.01];
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -78,7 +78,7 @@ class _MyAppState extends State<MyApp> {
 
   int index = 0;
 
-  int slideAccuracyIndex = 0;
+  int slidePrecisionIndex = 0;
 
   final GlobalKey<SlidableLineChartState<CoordinateType>> _key =
       GlobalKey<SlidableLineChartState<CoordinateType>>();
@@ -93,7 +93,7 @@ class _MyAppState extends State<MyApp> {
   int get max => testData[index].max;
   int get divisions => testData[index].divisions;
 
-  double? get slideAccuracy => slideAccuracyList[slideAccuracyIndex];
+  double? get slidePrecision => slidePrecisionList[slidePrecisionIndex];
 
   CoordinateType? slidableCoordinateType = CoordinateType.left;
 
@@ -164,9 +164,9 @@ class _MyAppState extends State<MyApp> {
                       min: min,
                       max: max,
                       divisions: divisions,
-                      slideAccuracy: slideAccuracy,
+                      slidePrecision: slidePrecision,
                       reversed: reversed,
-                      // onlyRenderEvenYAxisText: false,
+                      // onlyRenderEvenAxisLabel: false,
                       enableInitializationAnimation:
                           enableInitializationAnimation,
                       // initializationAnimationDuration:
@@ -196,7 +196,7 @@ class _MyAppState extends State<MyApp> {
                   bottom: 30,
                 ),
                 child: Text(
-                  'Current Slide Accuracy is $slideAccuracy',
+                  'Current Slide Precision is $slidePrecision',
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -256,15 +256,15 @@ class _MyAppState extends State<MyApp> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      int data = slideAccuracyIndex + 1;
-                      data = data == slideAccuracyList.length ? 0 : data;
+                      int data = slidePrecisionIndex + 1;
+                      data = data == slidePrecisionList.length ? 0 : data;
 
                       setState(() {
-                        slideAccuracyIndex = data;
+                        slidePrecisionIndex = data;
                       });
                     },
                     child: Text(
-                      'Toggle Slide Accuracy',
+                      'Toggle Slide Precision',
                       style: Theme.of(context).textTheme.labelLarge!.copyWith(
                             color: Colors.white,
                           ),
