@@ -21,7 +21,7 @@ const TextStyle kDisplayValueTextStyle = TextStyle(
   color: Colors.blueGrey,
 );
 const double kDisplayValueMarginBottom = 10.0;
-const double kCheckOrCloseIconMarginTop = 30.0;
+const double kIndicatorMarginTop = 30.0;
 const double kIndicatorRadius = 5.0;
 const Color kCheckBackgroundColor = Colors.blue;
 const Color kCloseBackgroundColor = Colors.red;
@@ -45,7 +45,7 @@ class SlidableLineChartThemeData<Enum> {
     this.defaultFillAreaColor,
     this.displayValueTextStyle,
     this.displayValueMarginBottom,
-    this.checkOrCloseIconMarginTop,
+    this.indicatorMarginTop,
     this.indicatorRadius,
     this.checkBackgroundColor,
     this.closeBackgroundColor,
@@ -139,8 +139,8 @@ class SlidableLineChartThemeData<Enum> {
 
   /// Margin top for check or close indicator on the coordinate system.
   ///
-  /// If this value are null, then [kCheckOrCloseIconMarginTop] will be used.
-  final double? checkOrCloseIconMarginTop;
+  /// If this value are null, then [kIndicatorMarginTop] will be used.
+  final double? indicatorMarginTop;
 
   /// Radius for check or close indicator on the coordinate system.
   ///
@@ -197,7 +197,7 @@ class SlidableLineChartThemeData<Enum> {
             defaultFillAreaColor == other.defaultFillAreaColor &&
             other.displayValueTextStyle == displayValueTextStyle &&
             other.displayValueMarginBottom == displayValueMarginBottom &&
-            other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
+            other.indicatorMarginTop == indicatorMarginTop &&
             other.indicatorRadius == indicatorRadius &&
             other.checkBackgroundColor == checkBackgroundColor &&
             other.closeBackgroundColor == closeBackgroundColor &&
@@ -222,7 +222,7 @@ class SlidableLineChartThemeData<Enum> {
           defaultFillAreaColor == other.defaultFillAreaColor &&
           other.displayValueTextStyle == displayValueTextStyle &&
           other.displayValueMarginBottom == displayValueMarginBottom &&
-          other.checkOrCloseIconMarginTop == checkOrCloseIconMarginTop &&
+          other.indicatorMarginTop == indicatorMarginTop &&
           other.indicatorRadius == indicatorRadius &&
           other.checkBackgroundColor == checkBackgroundColor &&
           other.closeBackgroundColor == closeBackgroundColor &&
@@ -249,7 +249,7 @@ class SlidableLineChartThemeData<Enum> {
         defaultFillAreaColor,
         displayValueTextStyle,
         displayValueMarginBottom,
-        checkOrCloseIconMarginTop,
+        indicatorMarginTop,
         indicatorRadius,
         checkBackgroundColor,
         closeBackgroundColor,

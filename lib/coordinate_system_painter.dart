@@ -400,8 +400,8 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required double dx,
   }) {
     final double x = dx;
-    final double y = slidableLineChartThemeData?.checkOrCloseIconMarginTop ??
-        kCheckOrCloseIconMarginTop;
+    final double y =
+        slidableLineChartThemeData?.indicatorMarginTop ?? kIndicatorMarginTop;
     final double radius =
         slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
 
@@ -436,8 +436,8 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     required double dx,
   }) {
     final double x = dx;
-    final double y = slidableLineChartThemeData?.checkOrCloseIconMarginTop ??
-        kCheckOrCloseIconMarginTop;
+    final double y =
+        slidableLineChartThemeData?.indicatorMarginTop ?? kIndicatorMarginTop;
     final double radius =
         slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
     final double size = radius * 0.8;
