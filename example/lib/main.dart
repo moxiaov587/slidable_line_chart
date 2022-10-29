@@ -35,7 +35,7 @@ class TestData {
           ),
         ];
 
-  final List<CoordinatesOptions<CoordinateType>> data;
+  List<CoordinatesOptions<CoordinateType>> data;
   final int min;
   final int max;
   final int divisions;
@@ -62,7 +62,7 @@ class _MyAppState extends State<MyApp> {
     TestData(
       min: -12,
       max: 1,
-      divisions: 2,
+      divisions: 1,
     ),
     TestData(
       min: 0,
@@ -75,6 +75,8 @@ class _MyAppState extends State<MyApp> {
       divisions: 2,
     ),
   ];
+
+  late final List<List<CoordinatesOptions<CoordinateType>>> _backupTestData;
 
   int index = 0;
 
@@ -101,6 +103,14 @@ class _MyAppState extends State<MyApp> {
   bool enableInitializationAnimation = true;
 
   String? result;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _backupTestData =
+        testData.map((e) => e.data.map((options) => options).toList()).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -174,8 +184,17 @@ class _MyAppState extends State<MyApp> {
                       onDrawCheckOrClose: (double value) {
                         return value >= 30;
                       },
-                      onChangeEnd: (List<double> data) {
-                        setState(() => result = data.join(','));
+                      onChange:
+                          (List<CoordinatesOptions<CoordinateType>> options) {
+                        setState(() => testData[index].data = options);
+                      },
+                      onChangeEnd:
+                          (List<CoordinatesOptions<CoordinateType>> options) {
+                        setState(() => result = options
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
                       },
                     ),
                   ),
@@ -233,6 +252,8 @@ class _MyAppState extends State<MyApp> {
                   ),
                   ElevatedButton(
                     onPressed: () {
+                      _slidableLineChartState?.resetAnimationController();
+
                       setState(() => reversed = !reversed);
                     },
                     child: Text(
@@ -259,9 +280,7 @@ class _MyAppState extends State<MyApp> {
                       int data = slidePrecisionIndex + 1;
                       data = data == slidePrecisionList.length ? 0 : data;
 
-                      setState(() {
-                        slidePrecisionIndex = data;
-                      });
+                      setState(() => slidePrecisionIndex = data);
                     },
                     child: Text(
                       'Toggle Slide Precision',
@@ -274,6 +293,8 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () {
                       int data = index + 1;
                       data = data == testData.length ? 0 : data;
+
+                      _slidableLineChartState?.resetAnimationController();
 
                       setState(() {
                         result = null;
@@ -289,11 +310,26 @@ class _MyAppState extends State<MyApp> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      _slidableLineChartState?.reset();
+                      _slidableLineChartState?.resetAnimationController(
+                        resetAll: false,
+                      );
 
-                      if (_slidableLineChartState?.displayValues != null) {
-                        setState(() => result =
-                            _slidableLineChartState!.displayValues!.join(','));
+                      setState(() => testData[index].data = [
+                            slidableCoordinateType == CoordinateType.left
+                                ? _backupTestData[index][0]
+                                : testData[index].data[0],
+                            slidableCoordinateType != CoordinateType.left
+                                ? _backupTestData[index][1]
+                                : testData[index].data[1],
+                          ]);
+
+                      if (slidableCoordinateType == null) {
+                        setState(() => result = testData[index]
+                            .data
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
                       }
                     },
                     child: Text(
@@ -308,11 +344,12 @@ class _MyAppState extends State<MyApp> {
                       if (slidableCoordinateType == null) {
                         setState(() => result = 'No Slidable Coordinates');
                       } else {
-                        if (_slidableLineChartState?.displayValues != null) {
-                          setState(() => result = _slidableLineChartState!
-                              .displayValues!
-                              .join(','));
-                        }
+                        setState(() => result = testData[index]
+                            .data
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
                       }
                     },
                     child: Text(
