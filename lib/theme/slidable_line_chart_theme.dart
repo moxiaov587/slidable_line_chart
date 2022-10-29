@@ -10,9 +10,9 @@ const Color kAxisLineColor = Colors.black;
 const double kAxisLineWidth = 1.0;
 const Color kGridLineColor = Colors.blueGrey;
 const double kGridLineWidth = 0.5;
-const bool kShowTapArea = true;
-const Color kTapAreaColor = Colors.red;
 const Color kDefaultCoordinatePointColor = Colors.blue;
+const bool kShowTapArea = true;
+const Color kTapAreaColor = Color(0x33F44336);
 const Color kDefaultLineColor = Colors.blueAccent;
 const double kLineWidth = 2.0;
 const Color kDefaultFillAreaColor = Colors.blue;
@@ -103,7 +103,7 @@ class SlidableLineChartThemeData<Enum> {
   /// Used to set styles in batches.
   ///
   /// If [CoordinatesStyle.tapAreaColor], [CoordinatesStyle.pointColor] and this value
-  /// are null, then [kTapAreaColor].withOpacity(.2) will be used.
+  /// are null, then [kTapAreaColor] will be used.
   final Color? defaultTapAreaColor;
 
   /// Default color of the line on the all coordinates.
@@ -189,9 +189,9 @@ class SlidableLineChartThemeData<Enum> {
         return axisLabelStyle == other.axisLabelStyle &&
             axisLineColor == other.axisLineColor &&
             gridLineColor == other.gridLineColor &&
+            defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
             showTapArea == other.showTapArea &&
             defaultTapAreaColor == other.defaultTapAreaColor &&
-            defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
             defaultLineColor == other.defaultLineColor &&
             lineWidth == other.lineWidth &&
             defaultFillAreaColor == other.defaultFillAreaColor &&
@@ -214,9 +214,9 @@ class SlidableLineChartThemeData<Enum> {
       return axisLabelStyle == other.axisLabelStyle &&
           axisLineColor == other.axisLineColor &&
           gridLineColor == other.gridLineColor &&
+          defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
           showTapArea == other.showTapArea &&
           defaultTapAreaColor == other.defaultTapAreaColor &&
-          defaultCoordinatePointColor == other.defaultCoordinatePointColor &&
           defaultLineColor == other.defaultLineColor &&
           lineWidth == other.lineWidth &&
           defaultFillAreaColor == other.defaultFillAreaColor &&
@@ -241,9 +241,9 @@ class SlidableLineChartThemeData<Enum> {
         axisLabelStyle,
         axisLineColor,
         gridLineColor,
+        defaultCoordinatePointColor,
         showTapArea,
         defaultTapAreaColor,
-        defaultCoordinatePointColor,
         defaultLineColor,
         lineWidth,
         defaultFillAreaColor,
