@@ -37,9 +37,9 @@ class SlidableLineChartThemeData<Enum> {
     this.axisLineWidth,
     this.gridLineColor,
     this.gridLineWidth,
+    this.defaultCoordinatePointColor,
     this.showTapArea,
     this.defaultTapAreaColor,
-    this.defaultCoordinatePointColor,
     this.defaultLineColor,
     this.lineWidth,
     this.defaultFillAreaColor,
@@ -65,12 +65,12 @@ class SlidableLineChartThemeData<Enum> {
   /// If this value are null, then [kAxisLabelStyle] will be used.
   final TextStyle? axisLabelStyle;
 
-  /// Axis color for the coordinate system.
+  /// Axis line color for the coordinate system.
   ///
   /// If this value are null, then [kAxisLineColor] will be used.
   final Color? axisLineColor;
 
-  /// Axis width for the coordinate system.
+  /// Axis line width for the coordinate system.
   ///
   /// If this value are null, then [kAxisLineWidth] will be used.
   final double? axisLineWidth;
@@ -93,12 +93,12 @@ class SlidableLineChartThemeData<Enum> {
   /// [kDefaultCoordinatePointColor] will be used.
   final Color? defaultCoordinatePointColor;
 
-  /// Display a circular area that can respond to a user touch.
+  /// Whether to display the user's touch area.
   ///
   /// If this value are null, then [kShowTapArea] will be used.
   final bool? showTapArea;
 
-  /// Default slidable coordinate point response area color.
+  /// Default slidable coordinate point touch area color.
   ///
   /// Used to set styles in batches.
   ///
