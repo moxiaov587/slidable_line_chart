@@ -3,20 +3,16 @@ part of 'coordinates_options.dart';
 @immutable
 class Coordinate {
   const Coordinate({
-    required this.initialValue,
-    this.value,
+    required this.value,
     this.offset = Offset.zero,
     required this.radius,
     required this.zoomedFactor,
   }) : _zoomedRadius = radius * zoomedFactor;
 
-  /// The initial value of the coordinate point.
-  ///
-  /// Used to reset display value.
-  final double initialValue;
-
   /// Value that change as the user slides.
-  final double? value;
+  ///
+  /// It is also the value displayed on the coordinate system.
+  final double value;
 
   /// The center of the coordinate point.
   final Offset offset;
@@ -29,9 +25,6 @@ class Coordinate {
 
   /// Zoomed radius of coordinate points.
   final double _zoomedRadius;
-
-  /// The value displayed in the coordinate system.
-  double get displayValue => value ?? initialValue;
 
   /// Rect of coordinate points.
   Rect get rect => Rect.fromCircle(
@@ -56,25 +49,23 @@ class Coordinate {
   }
 
   Coordinate copyWith({
-    Offset? offset,
     double? value,
+    Offset? offset,
     double? radius,
     double? zoomedFactor,
     bool enforceOverrideValue = false,
   }) =>
       Coordinate(
-        initialValue: initialValue,
+        value: value ?? this.value,
         offset: offset ?? this.offset,
-        value: enforceOverrideValue ? value : value ?? this.value,
         radius: radius ?? this.radius,
         zoomedFactor: zoomedFactor ?? this.zoomedFactor,
       );
 
   @override
   int get hashCode => Object.hash(
-        initialValue,
-        offset,
         value,
+        offset,
         radius,
         zoomedFactor,
       );
@@ -82,9 +73,8 @@ class Coordinate {
   @override
   bool operator ==(Object other) =>
       other is Coordinate &&
-      other.initialValue == initialValue &&
-      other.offset == offset &&
       other.value == value &&
+      other.offset == offset &&
       other.radius == radius &&
       other.zoomedFactor == zoomedFactor;
 }

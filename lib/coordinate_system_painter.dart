@@ -137,17 +137,25 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   }) {
     canvas.save();
 
+    final Map<Enum, CoordinatesStyle<Enum>>? coordinatesStyleMap =
+        slidableLineChartThemeData?.coordinatesStyleMap;
+
     // Draw other coordinates first so that the slidable coordinates are drawn at
     // the top level.
     for (final Coordinates<Enum> coordinates in coordinatesMap.values) {
       if (coordinates.type == slidableCoordinateType) {
         continue; // Skip slidable coordinates.
       }
+
+      final CoordinatesStyle<Enum>? coordinatesStyle =
+          coordinatesStyleMap?[coordinates.type];
+
       drawLineAndFillArea(
         canvas,
         animationController: otherCoordinatesAnimationController,
         coordinates: coordinates,
-        coordinateStyle: coordinates.style,
+        lineColor: coordinatesStyle?.lineColor,
+        fillAreaColor: coordinatesStyle?.fillAreaColor,
       );
 
       for (final Coordinate coordinate in coordinates.value) {
@@ -155,7 +163,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
           canvas,
           coordinatePointPaint
             ..color =
-                coordinates.style?.pointColor ?? defaultCoordinatePointColor,
+                coordinatesStyle?.pointColor ?? defaultCoordinatePointColor,
         );
       }
     }
@@ -164,11 +172,15 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         coordinatesMap[slidableCoordinateType];
 
     if (slidableCoordinates != null) {
+      final CoordinatesStyle<Enum>? slidableCoordinatesStyle =
+          coordinatesStyleMap?[slidableCoordinates.type];
+
       drawLineAndFillArea(
         canvas,
         animationController: slidableCoordinatesAnimationController,
         coordinates: slidableCoordinates,
-        coordinateStyle: slidableCoordinates.style,
+        lineColor: slidableCoordinatesStyle?.lineColor,
+        fillAreaColor: slidableCoordinatesStyle?.fillAreaColor,
       );
 
       for (final Coordinate coordinate in slidableCoordinates.value) {
@@ -176,17 +188,17 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
           coordinate.drawTapArea(
             canvas,
             tapAreaPaint
-              ..color = slidableCoordinates.style?.tapAreaColor ??
-                  slidableCoordinates.style?.pointColor?.withOpacity(.2) ??
+              ..color = slidableCoordinatesStyle?.tapAreaColor ??
+                  slidableCoordinatesStyle?.pointColor?.withOpacity(.2) ??
                   slidableLineChartThemeData?.defaultTapAreaColor ??
-                  kTapAreaColor.withOpacity(.2),
+                  kTapAreaColor,
           );
         }
 
         coordinate.drawCoordinatePoint(
           canvas,
           coordinatePointPaint
-            ..color = slidableCoordinates.style?.pointColor ??
+            ..color = slidableCoordinatesStyle?.pointColor ??
                 defaultCoordinatePointColor,
         );
 
@@ -194,10 +206,10 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
           canvas,
           dx: coordinate.offset.dx,
           chartHeight: size.height,
-          displayValue: coordinate.displayValue,
+          displayValue: coordinate.value,
         );
 
-        final bool? result = onDrawCheckOrClose?.call(coordinate.displayValue);
+        final bool? result = onDrawCheckOrClose?.call(coordinate.value);
 
         switch (result) {
           case null:
@@ -219,12 +231,12 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     Canvas canvas, {
     required AnimationController? animationController,
     required Coordinates<Enum> coordinates,
-    CoordinatesStyle<Enum>? coordinateStyle,
+    Color? lineColor,
+    Color? fillAreaColor,
   }) {
     final Offset firstCoordinateOffset = coordinates.value.first.offset;
 
-    final Color finalFillAreaColor =
-        coordinateStyle?.fillAreaColor ?? defaultFillAreaColor;
+    final Color finalFillAreaColor = fillAreaColor ?? defaultFillAreaColor;
 
     final Path linePath = coordinates.value.skip(1).fold<Path>(
           Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
@@ -242,7 +254,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
       canvas.drawPath(
         path,
-        linePaint..color = coordinateStyle?.lineColor ?? defaultLineColor,
+        linePaint..color = lineColor ?? defaultLineColor,
       );
 
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);

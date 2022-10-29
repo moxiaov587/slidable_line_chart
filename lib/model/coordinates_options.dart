@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/slidable_line_chart_theme.dart';
-
 part 'coordinate.dart';
 part 'coordinates.dart';
 
@@ -17,7 +15,7 @@ class CoordinatesOptions<Enum> {
   /// Type of coordinates options.
   final Enum type;
 
-  /// Value of all coordinate points displayed in the coordinate system.
+  /// The value displayed in the coordinate system for each coordinate point.
   final List<double> values;
 
   /// Radius of coordinate points.
@@ -25,7 +23,7 @@ class CoordinatesOptions<Enum> {
   /// Defaults to 6.0.
   final double radius;
 
-  /// Increase the magnification factor of the touch area.
+  /// Magnification factor of the touch area.
   ///
   /// Defaults to 3.0.
   final double zoomedFactor;

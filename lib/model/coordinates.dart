@@ -5,40 +5,33 @@ class Coordinates<Enum> {
   const Coordinates({
     required this.type,
     required this.value,
-    this.style,
   });
 
-  factory Coordinates.formOptions(
-    CoordinatesOptions<Enum> options, {
-    CoordinatesStyle<Enum>? coordinateStyle,
-  }) =>
+  factory Coordinates.formOptions(CoordinatesOptions<Enum> options) =>
       Coordinates<Enum>(
         type: options.type,
         value: options.values
             .map(
               (double value) => Coordinate(
-                initialValue: value,
+                value: value,
                 radius: options.radius,
                 zoomedFactor: options.zoomedFactor,
               ),
             )
             .toList(),
-        style: coordinateStyle,
+      );
+
+  CoordinatesOptions<Enum> toOptions() => CoordinatesOptions<Enum>(
+        type,
+        values: value.map((Coordinate coordinate) => coordinate.value).toList(),
       );
 
   final Enum type;
   final List<Coordinate> value;
-  final CoordinatesStyle<Enum>? style;
 
-  Coordinates<Enum> copyWith({
-    List<Coordinate>? value,
-    CoordinatesStyle<Enum>? style,
-    bool enforceOverrideStyle = false,
-  }) =>
-      Coordinates<Enum>(
+  Coordinates<Enum> copyWith({List<Coordinate>? value}) => Coordinates<Enum>(
         type: type,
         value: value ?? this.value,
-        style: enforceOverrideStyle ? style : style ?? this.style,
       );
 
   @override
@@ -54,7 +47,7 @@ class Coordinates<Enum> {
         }
       }
 
-      return type == other.type && style == other.style;
+      return type == other.type;
     }
     return false;
   }
@@ -63,6 +56,5 @@ class Coordinates<Enum> {
   int get hashCode => Object.hash(
         type,
         Object.hashAll(value),
-        style,
       );
 }
