@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'package:slidable_line_chart/slidable_line_chart.dart';
@@ -13,40 +15,33 @@ enum CoordinateType {
 
 class TestData {
   TestData({
-    required this.max,
     required this.min,
-    required this.yAxisDivisions,
-  }) : data = List<int>.generate(12, (index) => index)
-            .fold<List<Coordinate<CoordinateType>>>([], (previousValue, index) {
-          late Coordinate<CoordinateType> coordinate;
-          if (previousValue.isEmpty) {
-            coordinate = Coordinate<CoordinateType>(
-              id: index,
-              type: CoordinateType.left,
-              initialValue: min.toDouble(),
-            );
-          } else {
-            coordinate = Coordinate<CoordinateType>(
-              id: index,
-              type: index >= 6 ? CoordinateType.right : CoordinateType.left,
-              initialValue: index >= 6
-                  ? previousValue
-                      .sublist(0, 6)
-                      .reversed
-                      .toList()[index % 6]
-                      .initialValue
-                  : previousValue.last.initialValue + yAxisDivisions,
-            );
-          }
+    required this.max,
+    required this.divisions,
+  }) : data = [
+          CoordinatesOptions(
+            CoordinateType.left,
+            values: List.generate(
+              6,
+              (index) => (Random().nextInt(max - min) + min).toDouble(),
+            ),
+          ),
+          CoordinatesOptions(
+            CoordinateType.right,
+            values: List.generate(
+              6,
+              (index) => (Random().nextInt(max - min) + min).toDouble(),
+            ),
+          ),
+        ];
 
-          return [...previousValue, coordinate];
-        });
-
-  final List<Coordinate<CoordinateType>> data;
-  final int max;
+  List<CoordinatesOptions<CoordinateType>> data;
   final int min;
-  final int yAxisDivisions;
+  final int max;
+  final int divisions;
 }
+
+const List<double?> slidePrecisionList = [null, 1.0, 0.1, 0.01];
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -56,177 +51,324 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  bool isDarkMode = false;
+
   final List<TestData> testData = [
     TestData(
-      max: 12,
       min: -37,
-      yAxisDivisions: 3,
+      max: 12,
+      divisions: 3,
     ),
     TestData(
-      max: 0,
       min: -12,
-      yAxisDivisions: 1,
+      max: 1,
+      divisions: 1,
     ),
     TestData(
-      max: 120,
       min: 0,
-      yAxisDivisions: 10,
+      max: 120,
+      divisions: 10,
     ),
     TestData(
-      max: 21,
       min: 3,
-      yAxisDivisions: 2,
+      max: 21,
+      divisions: 2,
     ),
   ];
 
+  late final List<List<CoordinatesOptions<CoordinateType>>> _backupTestData;
+
   int index = 0;
 
-  List<Coordinate<CoordinateType>> get allCoordinates => testData[index].data;
+  int slidePrecisionIndex = 0;
 
-  int get max => testData[index].max;
+  final GlobalKey<SlidableLineChartState<CoordinateType>> _key =
+      GlobalKey<SlidableLineChartState<CoordinateType>>();
+
+  SlidableLineChartState<CoordinateType>? get _slidableLineChartState =>
+      _key.currentState;
+
+  List<CoordinatesOptions<CoordinateType>> get coordinatesOptionsList =>
+      testData[index].data;
+
   int get min => testData[index].min;
-  int get yAxisDivisions => testData[index].yAxisDivisions;
+  int get max => testData[index].max;
+  int get divisions => testData[index].divisions;
 
-  CoordinateType? canDragCoordinateType = CoordinateType.left;
+  double? get slidePrecision => slidePrecisionList[slidePrecisionIndex];
 
-  bool reversedYAxis = false;
+  CoordinateType? slidableCoordinateType = CoordinateType.left;
+
+  bool reversed = false;
+  bool enableInitializationAnimation = true;
 
   String? result;
 
   @override
+  void initState() {
+    super.initState();
+
+    _backupTestData =
+        testData.map((e) => e.data.map((options) => options).toList()).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      theme: ThemeData.light().copyWith(
+        primaryColor: const Color(0xff36cfc9),
+        errorColor: const Color(0xfff759ab),
+      ),
+      darkTheme: ThemeData.dark().copyWith(
+        primaryColor: const Color(0xff1765ad),
+        errorColor: const Color(0xffa61d24),
+      ),
       home: Scaffold(
         appBar: AppBar(
           title: const Text('SlidableLineChart example app'),
         ),
-        body: Column(
-          children: [
-            Container(
-              height: 300,
-              margin: const EdgeInsets.only(top: 50),
-              padding: const EdgeInsets.only(
-                left: 30,
-                right: 10,
-              ),
-              child: Center(
-                child: SlidableLineChart(
-                  canDragCoordinateType: canDragCoordinateType,
-                  allCoordinates: allCoordinates,
-                  reversedYAxis: reversedYAxis,
-                  xAxis: const <String>['500', '1k', '2k', '4k', '6k', '8k'],
-                  yAxisDivisions: yAxisDivisions,
-                  max: max,
-                  min: min,
-                  drawCheckOrClose: (double value) {
-                    return value >= 30;
-                  },
-                  showTapArea: true,
-                  enforceStepOffset: true,
-                  // enableInitializationAnimation: true,
-                  // initializationAnimationDuration:
-                  //     const Duration(milliseconds: 1000),
-                  // onlyRenderEvenYAxisText: false,
-                  coordinateStyles: {
-                    CoordinateType.left: CoordinateStyle(
-                      coordinatePointColor: Colors.red,
-                      linkLineColor: Colors.redAccent,
-                      fillAreaColor: Colors.red.withOpacity(.3),
-                    )
-                  },
+        body: Builder(builder: (context) {
+          return Column(
+            children: [
+              Container(
+                height: 300,
+                margin: const EdgeInsets.only(top: 50),
+                padding: const EdgeInsets.only(
+                  left: 30,
+                  right: 10,
                 ),
-              ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(
-                top: 50,
-                bottom: 30,
-              ),
-              child: Text(
-                result ?? '点击按钮获取当前数据',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 20,
-              runSpacing: 10,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    switch (canDragCoordinateType) {
-                      case null:
-                        setState(() {
-                          canDragCoordinateType = CoordinateType.left;
-                        });
-                        break;
-                      case CoordinateType.left:
-                        setState(() {
-                          canDragCoordinateType = CoordinateType.right;
-                        });
-                        break;
-                      case CoordinateType.right:
-                        setState(() {
-                          canDragCoordinateType = null;
-                        });
-                        break;
-                    }
-                  },
-                  child: Text(
-                    '切换可拖动类型',
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                          color: Colors.white,
+                child: Center(
+                  child: SlidableLineChartTheme(
+                    data: SlidableLineChartThemeData<CoordinateType>(
+                      coordinatesStyleList: [
+                        CoordinatesStyle<CoordinateType>(
+                          type: CoordinateType.left,
+                          pointColor: Theme.of(context).primaryColor,
+                          lineColor: Theme.of(context).primaryColor,
+                          fillAreaColor:
+                              Theme.of(context).primaryColor.withOpacity(.5),
                         ),
+                        CoordinatesStyle<CoordinateType>(
+                          type: CoordinateType.right,
+                          pointColor: Theme.of(context).errorColor,
+                          lineColor: Theme.of(context).errorColor,
+                          fillAreaColor:
+                              Theme.of(context).errorColor.withOpacity(.5),
+                        ),
+                      ],
+                      showTapArea: true,
+                    ),
+                    child: SlidableLineChart(
+                      key: _key,
+                      slidableCoordinateType: slidableCoordinateType,
+                      coordinatesOptionsList: coordinatesOptionsList,
+                      xAxis: const <String>[
+                        '500',
+                        '1k',
+                        '2k',
+                        '4k',
+                        '6k',
+                        '8k'
+                      ],
+                      min: min,
+                      max: max,
+                      divisions: divisions,
+                      slidePrecision: slidePrecision,
+                      reversed: reversed,
+                      // onlyRenderEvenAxisLabel: false,
+                      enableInitializationAnimation:
+                          enableInitializationAnimation,
+                      // initializationAnimationDuration:
+                      //     const Duration(milliseconds: 1000),
+                      onDrawCheckOrClose: (double value) {
+                        return value >= 30;
+                      },
+                      onChange:
+                          (List<CoordinatesOptions<CoordinateType>> options) {
+                        setState(() => testData[index].data = options);
+                      },
+                      onChangeEnd:
+                          (List<CoordinatesOptions<CoordinateType>> options) {
+                        setState(() => result = options
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
+                      },
+                    ),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() => reversedYAxis = !reversedYAxis);
-                  },
-                  child: Text(
-                    '反向Y轴',
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                          color: Colors.white,
-                        ),
-                  ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(
+                  top: 50,
+                  bottom: 30,
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    int data = index + 1;
+                child: Text(
+                  result ?? 'Echo data after sliding.',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Container(
+                margin: const EdgeInsets.only(
+                  bottom: 30,
+                ),
+                child: Text(
+                  'Current Slide Precision is $slidePrecision',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 20,
+                runSpacing: 10,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      CoordinateType? type;
+                      switch (slidableCoordinateType) {
+                        case null:
+                          type = CoordinateType.left;
+                          break;
+                        case CoordinateType.left:
+                          type = CoordinateType.right;
+                          break;
+                        case CoordinateType.right:
+                          break;
+                      }
 
-                    data = data == testData.length ? 1 : data;
-                    setState(() => index = data);
-                  },
-                  child: Text(
-                    '切换数据源',
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                          color: Colors.white,
-                        ),
+                      setState(() {
+                        result = null;
+                        slidableCoordinateType = type;
+                      });
+                    },
+                    child: Text(
+                      'Toggle Slidable Type',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
                   ),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (canDragCoordinateType == null) {
-                      setState(() => result = '当前没有可拖动的Coordinate');
-                    } else {
-                      setState(() => result = testData[index]
-                          .data
-                          .where((coordinate) =>
-                              coordinate.type == canDragCoordinateType)
-                          .map((coordinate) => coordinate.currentValue)
-                          .join(','));
-                    }
-                  },
-                  child: Text(
-                    '获取当前数据',
-                    style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                          color: Colors.white,
-                        ),
+                  ElevatedButton(
+                    onPressed: () {
+                      _slidableLineChartState?.resetAnimationController();
+
+                      setState(() => reversed = !reversed);
+                    },
+                    child: Text(
+                      'Reversed',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
                   ),
-                ),
-              ],
-            )
-          ],
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() => enableInitializationAnimation =
+                          !enableInitializationAnimation);
+                    },
+                    child: Text(
+                      '${enableInitializationAnimation ? 'Disable' : 'Enable'} Animation',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      int data = slidePrecisionIndex + 1;
+                      data = data == slidePrecisionList.length ? 0 : data;
+
+                      setState(() => slidePrecisionIndex = data);
+                    },
+                    child: Text(
+                      'Toggle Slide Precision',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      int data = index + 1;
+                      data = data == testData.length ? 0 : data;
+
+                      _slidableLineChartState?.resetAnimationController();
+
+                      setState(() {
+                        result = null;
+                        index = data;
+                      });
+                    },
+                    child: Text(
+                      'Toggle Test Data',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      _slidableLineChartState?.resetAnimationController(
+                        resetAll: false,
+                      );
+
+                      setState(() => testData[index].data = [
+                            slidableCoordinateType == CoordinateType.left
+                                ? _backupTestData[index][0]
+                                : testData[index].data[0],
+                            slidableCoordinateType != CoordinateType.left
+                                ? _backupTestData[index][1]
+                                : testData[index].data[1],
+                          ]);
+
+                      if (slidableCoordinateType == null) {
+                        setState(() => result = testData[index]
+                            .data
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
+                      }
+                    },
+                    child: Text(
+                      'Reset',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (slidableCoordinateType == null) {
+                        setState(() => result = 'No Slidable Coordinates');
+                      } else {
+                        setState(() => result = testData[index]
+                            .data
+                            .singleWhere((options) =>
+                                options.type == slidableCoordinateType)
+                            .values
+                            .join(','));
+                      }
+                    },
+                    child: Text(
+                      'Get Current Data',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          );
+        }),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            setState(() => isDarkMode = !isDarkMode);
+          },
+          child: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
         ),
       ),
     );
