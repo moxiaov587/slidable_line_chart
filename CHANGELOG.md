@@ -1,11 +1,16 @@
+## 1.0.1
+
+- Improve performance of drag events.
+- Optimize the drawing of coordinate systems.
+
 ## 1.0.0
 
 - Improve that animation effect of chart initialization.
 - Optimized sliding calculation method.
 - Export `SlidableLineChartState` to provide `resetAnimationController`.
-- Now the diagram itself doesn't maintain any state and needs to be updated via the `onChanged` callback.
 - Update example to provide more use cases.
 -  **BREAKING CHANGE**
+  - Now the diagram itself doesn't maintain any state and needs to be updated via the `onChanged` callback.
   - Remove the style-related property from the `SlidableLineChart` and now replace it with `SlidableLineChartThemeData`.
   - Use `coordinatesOptionsList` instead of `allCoordinates` to simplify parameter entry.
   - Rename `canDragCoordinateType` to `slidableCoordinateType`.
