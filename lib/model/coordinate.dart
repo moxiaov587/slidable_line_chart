@@ -53,7 +53,6 @@ class Coordinate {
     Offset? offset,
     double? radius,
     double? zoomedFactor,
-    bool enforceOverrideValue = false,
   }) =>
       Coordinate(
         value: value ?? this.value,
