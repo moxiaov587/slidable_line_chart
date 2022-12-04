@@ -191,36 +191,19 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   Coordinates<Enum>? get _slidableCoordinates =>
       _coordinatesMap[widget.slidableCoordinateType];
 
-  /// Convert [dx] to respond correctly to user sliding.
-  double _transformX(double dx) => dx - widget.coordinateSystemOrigin.dx;
-
-  /// Convert [dy] to respond correctly to user sliding.
-  double _transformY(double dy, {required double chartHeight}) =>
-      dy - chartHeight + widget.coordinateSystemOrigin.dy;
-
-  /// Convert [offset] to respond correctly to user sliding.
-  Offset _transformOffset(
-    Offset offset, {
-    required double chartHeight,
-  }) =>
-      Offset(
-        _transformX(offset.dx),
-        _transformY(offset.dy, chartHeight: chartHeight),
-      );
-
   /// Get X-axis tick line width from the length of [SlidableLineChart.xAxis].
   ///
   /// Calculate by subtracting `dx` from [SlidableLineChart.coordinateSystemOrigin].
   ///
   /// This value divided by 2 is dx for the coordinate offset.
-  double _getXAxisTickLineWidth(double chartWidth) =>
-      (chartWidth - widget.coordinateSystemOrigin.dx) / widget.xAxis.length;
+  double _getXAxisTickLineWidth(double chartActualWidth) =>
+      chartActualWidth / widget.xAxis.length;
 
   /// Get Y-axis tick line height from the length of [_yAxis].
   ///
   /// Calculate by subtracting `dy` from [SlidableLineChart.coordinateSystemOrigin].
-  double _getYAxisTickLineHeight(double chartHeight) =>
-      (chartHeight - widget.coordinateSystemOrigin.dy) / (_yAxis.length - 1);
+  double _getYAxisTickLineHeight(double chartActualHeight) =>
+      chartActualHeight / (_yAxis.length - 1);
 
   /// Maximum Y-axis value after [_generateYAxis] processing.
   ///
@@ -268,22 +251,19 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// Get the conversion factor from the Y-axis display value to the offset value.
   ///
   /// `display value * this factor = offset value`.
-  double _getYAxisDisplayValue2OffsetValueFactor(double chartHeight) =>
-      (chartHeight - widget.coordinateSystemOrigin.dy) /
-      (_yAxisMaxValue - widget.min);
+  double _getYAxisDisplayValue2OffsetValueFactor(double chartActualHeight) =>
+      chartActualHeight / (_yAxisMaxValue - widget.min);
 
   /// Display value to Y-axis offset value.
   double _displayValue2YAxisOffsetValue(
     double displayValue, {
-    required double chartHeight,
+    required double chartActualHeight,
     required double yAxisDisplayValue2OffsetValueFactor,
   }) =>
       widget.reversed
-          ? _transformY(
-              (displayValue - widget.min) * yAxisDisplayValue2OffsetValueFactor,
-              chartHeight: chartHeight,
-            )
-          : -(displayValue - widget.min) * yAxisDisplayValue2OffsetValueFactor;
+          ? (displayValue - widget.min) * yAxisDisplayValue2OffsetValueFactor
+          : chartActualHeight -
+              (displayValue - widget.min) * yAxisDisplayValue2OffsetValueFactor;
 
   double _keepBoundsRoundToDouble(
     double min,
@@ -297,39 +277,21 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     return value.clamp(min, max);
   }
 
-  List<double> _getMinAndMaxOffsetValueForSlidingAreaOnYAxis(
-      double chartHeight) {
-    final double totalOffsetValue =
-        chartHeight - widget.coordinateSystemOrigin.dy;
-
-    late double min;
-    late double max;
-
-    if (widget.reversed) {
-      min = 0.0;
-      max = (1 - _percentDerivedArea) * totalOffsetValue;
-    } else {
-      min = _percentDerivedArea * totalOffsetValue;
-      max = totalOffsetValue;
-    }
-
-    return <double>[min, max];
-  }
-
   /// Get the value displayed on the y-axis at the current position according
   /// to the slide precision.
   double _getYAxisDisplayValueBySlidePrecision(
     double dy, {
-    required double chartHeight,
+    required double chartActualHeight,
+    required double minOffsetValueForSlidingAreaOnYAxis,
+    required double maxOffsetValueForSlidingAreaOnYAxis,
   }) {
-    final List<double> offsetValues =
-        _getMinAndMaxOffsetValueForSlidingAreaOnYAxis(chartHeight);
-
     final double dyLogicRowsNumberOnSlidingArea = _keepBoundsRoundToDouble(
       _minLogicRowsNumberOnSlidingArea,
       _maxLogicRowsNumberOnSlidingArea,
-      value: (dy.clamp(offsetValues[0], offsetValues[1]) /
-              (offsetValues[1] - offsetValues[0])) *
+      value: (dy.clamp(minOffsetValueForSlidingAreaOnYAxis,
+                  maxOffsetValueForSlidingAreaOnYAxis) /
+              (maxOffsetValueForSlidingAreaOnYAxis -
+                  minOffsetValueForSlidingAreaOnYAxis)) *
           (_maxLogicRowsNumberOnSlidingArea - _minLogicRowsNumberOnSlidingArea),
     );
 
@@ -547,13 +509,13 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
           return const SizedBox.shrink();
         }
 
-        final double maxOffsetValueOnYAxisSlidingArea =
-            _getMinAndMaxOffsetValueForSlidingAreaOnYAxis(chartHeight)[1];
-
         final double xAxisTickLineWidth = _getXAxisTickLineWidth(chartWidth);
 
+        final double chartActualHeight =
+            chartHeight - widget.coordinateSystemOrigin.dy;
+
         final double yAxisDisplayValue2OffsetValueFactor =
-            _getYAxisDisplayValue2OffsetValueFactor(chartHeight);
+            _getYAxisDisplayValue2OffsetValueFactor(chartActualHeight);
 
         _coordinatesMap = <Enum, Coordinates<Enum>>{
           for (final CoordinatesOptions<Enum> options
@@ -565,10 +527,12 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
                     (int index, double value) => Coordinate(
                       value: value,
                       offset: Offset(
-                        (xAxisTickLineWidth / 2) + xAxisTickLineWidth * index,
+                        (xAxisTickLineWidth / 2) +
+                            xAxisTickLineWidth * index +
+                            widget.coordinateSystemOrigin.dx,
                         _displayValue2YAxisOffsetValue(
                           value,
-                          chartHeight: chartHeight,
+                          chartActualHeight: chartActualHeight,
                           yAxisDisplayValue2OffsetValueFactor:
                               yAxisDisplayValue2OffsetValueFactor,
                         ),
@@ -582,6 +546,19 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
         };
 
         _forwardAnimationControllerWhenIsDismissed();
+
+        late double minOffsetValueOnYAxisSlidingArea;
+        late double maxOffsetValueOnYAxisSlidingArea;
+
+        if (widget.reversed) {
+          minOffsetValueOnYAxisSlidingArea = 0.0;
+          maxOffsetValueOnYAxisSlidingArea =
+              (1 - _percentDerivedArea) * chartActualHeight;
+        } else {
+          minOffsetValueOnYAxisSlidingArea =
+              _percentDerivedArea * chartActualHeight;
+          maxOffsetValueOnYAxisSlidingArea = chartActualHeight;
+        }
 
         final Widget coordinateSystemPainter = CustomPaint(
           size: Size(chartWidth, chartHeight),
@@ -614,70 +591,62 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
           return Opacity(opacity: 0.6, child: coordinateSystemPainter);
         }
 
-        if (_slidableCoordinates != null) {
-          return GestureDetector(
-            onVerticalDragDown: (DragDownDetails details) {
-              _currentSlideCoordinateIndex = _hitTestCoordinate(
-                _transformOffset(
-                  details.localPosition,
-                  chartHeight: chartHeight,
-                ),
-              );
-
-              if (_currentSlideCoordinateIndex != null) {
-                HapticFeedback.mediumImpact();
-              }
-            },
-            onVerticalDragStart: (DragStartDetails details) {
-              _currentSlideCoordinateIndex ??= _hitTestCoordinate(
-                _transformOffset(
-                  details.localPosition,
-                  chartHeight: chartHeight,
-                ),
-              );
-
-              widget.onChangeStart?.call(_coordinatesMap.values
-                  .map((Coordinates<Enum> coordinates) =>
-                      coordinates.toOptions())
-                  .toList());
-            },
-            onVerticalDragUpdate: (DragUpdateDetails details) {
-              if (_currentSlideCoordinateIndex != null) {
-                final double displayValue =
-                    _getYAxisDisplayValueBySlidePrecision(
-                  details.localPosition.dy,
-                  chartHeight: chartHeight,
-                );
-
-                _coordinatesMap[widget.slidableCoordinateType]!
-                        .value[_currentSlideCoordinateIndex!] =
-                    _slidableCoordinates!.value[_currentSlideCoordinateIndex!]
-                        .copyWith(value: displayValue);
-
-                widget.onChange!.call(_coordinatesMap.values
-                    .map(
-                      (Coordinates<Enum> coordinates) =>
-                          coordinates.toOptions(),
-                    )
-                    .toList());
-              }
-            },
-            onVerticalDragEnd: (DragEndDetails details) {
-              _currentSlideCoordinateIndex = null;
-
-              widget.onChangeEnd?.call(_coordinatesMap.values
-                  .map((Coordinates<Enum> coordinates) =>
-                      coordinates.toOptions())
-                  .toList());
-            },
-            onVerticalDragCancel: () {
-              _currentSlideCoordinateIndex = null;
-            },
-            child: RepaintBoundary(child: coordinateSystemPainter),
-          );
+        if (_slidableCoordinates == null) {
+          return coordinateSystemPainter;
         }
 
-        return coordinateSystemPainter;
+        return GestureDetector(
+          onVerticalDragDown: (DragDownDetails details) {
+            _currentSlideCoordinateIndex =
+                _hitTestCoordinate(details.localPosition);
+
+            if (_currentSlideCoordinateIndex != null) {
+              HapticFeedback.mediumImpact();
+            }
+          },
+          onVerticalDragStart: (DragStartDetails details) {
+            _currentSlideCoordinateIndex ??=
+                _hitTestCoordinate(details.localPosition);
+
+            widget.onChangeStart?.call(_coordinatesMap.values
+                .map((Coordinates<Enum> coordinates) => coordinates.toOptions())
+                .toList());
+          },
+          onVerticalDragUpdate: (DragUpdateDetails details) {
+            if (_currentSlideCoordinateIndex != null) {
+              final double displayValue = _getYAxisDisplayValueBySlidePrecision(
+                details.localPosition.dy,
+                chartActualHeight: chartActualHeight,
+                minOffsetValueForSlidingAreaOnYAxis:
+                    minOffsetValueOnYAxisSlidingArea,
+                maxOffsetValueForSlidingAreaOnYAxis:
+                    maxOffsetValueOnYAxisSlidingArea,
+              );
+
+              _coordinatesMap[widget.slidableCoordinateType]!
+                      .value[_currentSlideCoordinateIndex!] =
+                  _slidableCoordinates!.value[_currentSlideCoordinateIndex!]
+                      .copyWith(value: displayValue);
+
+              widget.onChange!.call(_coordinatesMap.values
+                  .map(
+                    (Coordinates<Enum> coordinates) => coordinates.toOptions(),
+                  )
+                  .toList());
+            }
+          },
+          onVerticalDragEnd: (DragEndDetails details) {
+            _currentSlideCoordinateIndex = null;
+
+            widget.onChangeEnd?.call(_coordinatesMap.values
+                .map((Coordinates<Enum> coordinates) => coordinates.toOptions())
+                .toList());
+          },
+          onVerticalDragCancel: () {
+            _currentSlideCoordinateIndex = null;
+          },
+          child: RepaintBoundary(child: coordinateSystemPainter),
+        );
       },
     );
   }
