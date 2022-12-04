@@ -8,7 +8,7 @@ Show a line chart and change it.
 - Supports multiple lines but currently only supports dragging one of them
 - Supports reversed y-axis
 - Supports set the minimum value for each slide by the user
-- Supports customization of most styles
+- Supports dark mode and custom styles
 
 ## Preview
 
