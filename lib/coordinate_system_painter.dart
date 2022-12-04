@@ -7,9 +7,9 @@ import 'theme/slidable_line_chart_theme.dart';
 
 typedef OnDrawIndicator = bool Function(double value);
 
-typedef GetXAxisTickLineWidth = double Function(double chartWidth);
+typedef GetXAxisTickLineWidth = double Function(double chartActualWidth);
 
-typedef GetYAxisTickLineHeight = double Function(double chartHeight);
+typedef GetYAxisTickLineHeight = double Function(double chartActualHeight);
 
 class CoordinateSystemPainter<Enum> extends CustomPainter {
   CoordinateSystemPainter({
@@ -106,37 +106,41 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
   final Paint tapAreaPaint = Paint();
 
+  late double _chartWidth;
+  late double _chartHeight;
+
+  late double _chartActualWidth;
+  late double _chartActualHeight;
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Move the [canvas] starting point to [coordinateSystemOrigin]
-    canvas.translate(
-      coordinateSystemOrigin.dx,
-      size.height - coordinateSystemOrigin.dy,
-    );
+    _chartWidth = size.width;
+    _chartHeight = size.height;
+
+    _chartActualWidth = _chartWidth - coordinateSystemOrigin.dx;
+    _chartActualHeight = _chartHeight - coordinateSystemOrigin.dy;
 
     final Path axisLinePath = Path()
-      ..moveTo(-coordinateSystemOrigin.dx, 0)
-      ..relativeLineTo(size.width, 0)
-      ..moveTo(0, coordinateSystemOrigin.dy)
-      ..relativeLineTo(0, -size.height);
-
+      // X-Axis
+      ..moveTo(0.0, _chartActualHeight)
+      ..relativeLineTo(_chartWidth, 0.0)
+      // Y-Axis
+      ..moveTo(coordinateSystemOrigin.dx, 0.0)
+      ..relativeLineTo(0.0, _chartHeight);
     canvas.drawPath(axisLinePath, axisLinePaint);
 
-    final double xAxisTickLineWidth = getXAxisTickLineWidth(size.width);
+    final double xAxisTickLineWidth = getXAxisTickLineWidth(_chartActualWidth);
 
-    drawXAxis(canvas, size, xAxisTickLineWidth: xAxisTickLineWidth);
-    drawYAxis(canvas, size);
+    drawXAxis(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
+    drawYAxis(canvas);
 
-    drawCoordinates(canvas, size, xAxisTickLineWidth: xAxisTickLineWidth);
+    drawCoordinates(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
   }
 
   void drawCoordinates(
-    Canvas canvas,
-    Size size, {
+    Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
-    canvas.save();
-
     final Map<Enum, CoordinatesStyle<Enum>>? coordinatesStyleMap =
         slidableLineChartThemeData?.coordinatesStyleMap;
 
@@ -205,26 +209,30 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         _drawDisplayValueText(
           canvas,
           dx: coordinate.offset.dx,
-          chartHeight: size.height,
           displayValue: coordinate.value,
         );
 
         final bool? result = onDrawCheckOrClose?.call(coordinate.value);
 
+        final double radius =
+            slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
+
+        final double y = (slidableLineChartThemeData?.indicatorMarginTop ??
+                kIndicatorMarginTop) +
+            _chartHeight;
+
         switch (result) {
           case null:
             break;
           case true:
-            _drawCheck(canvas, dx: coordinate.offset.dx);
+            _drawCheck(canvas, radius: radius, x: coordinate.offset.dx, y: y);
             break;
           case false:
-            _drawClose(canvas, dx: coordinate.offset.dx);
+            _drawClose(canvas, radius: radius, x: coordinate.offset.dx, y: y);
             break;
         }
       }
     }
-
-    canvas.restore();
   }
 
   void drawLineAndFillArea(
@@ -260,10 +268,10 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);
 
       final Path fillAreaPath = Path()
-        ..moveTo(firstCoordinateOffset.dx, 0.0)
+        ..moveTo(firstCoordinateOffset.dx, _chartActualHeight)
         ..addPath(path, Offset.zero)
-        ..lineTo(tangent?.position.dx ?? 0.0, 0.0)
-        ..lineTo(firstCoordinateOffset.dx, 0.0)
+        ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
+        ..lineTo(firstCoordinateOffset.dx, _chartActualHeight)
         ..close();
 
       canvas.drawPath(
@@ -277,11 +285,11 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
               finalFillAreaColor,
             ],
           ).createShader(
-            Rect.fromLTRB(
+            Rect.fromLTWH(
               firstCoordinateOffset.dx,
-              -maxOffsetValueOnYAxisSlidingArea,
-              coordinates.value.last.offset.dx,
-              -coordinateSystemOrigin.dy,
+              _chartActualHeight - maxOffsetValueOnYAxisSlidingArea,
+              coordinates.value.last.offset.dx - firstCoordinateOffset.dx,
+              maxOffsetValueOnYAxisSlidingArea,
             ),
           ),
       );
@@ -289,25 +297,22 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   }
 
   void drawXAxis(
-    Canvas canvas,
-    Size size, {
+    Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
     canvas.save();
 
-    canvas.translate(xAxisTickLineWidth, 0);
-
-    final Offset axisLabelOffset = Offset(
-        -xAxisTickLineWidth / 2,
-        slidableLineChartThemeData?.axisLabelStyle?.fontSize ??
-            kAxisLabelStyle.fontSize!);
+    canvas.translate(
+      xAxisTickLineWidth / 2 + coordinateSystemOrigin.dx,
+      _chartHeight,
+    );
 
     for (int i = 0; i < xAxis.length; i++) {
       _drawAxisLabel(
         canvas,
         xAxis[i],
+        drawXAxis: true,
         alignment: Alignment.center,
-        offset: axisLabelOffset,
       );
 
       canvas.translate(xAxisTickLineWidth, 0);
@@ -316,30 +321,30 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     canvas.restore();
   }
 
-  void drawYAxis(Canvas canvas, Size size) {
+  void drawYAxis(Canvas canvas) {
     canvas.save();
 
-    final double yAxisTickLineHeight = getYAxisTickLineHeight(size.height);
+    final double yAxisTickLineHeight =
+        getYAxisTickLineHeight(_chartActualHeight);
 
-    final Offset axisLabelOffset = Offset(
-        -(slidableLineChartThemeData?.axisLabelStyle?.fontSize ??
-            kAxisLabelStyle.fontSize!),
-        0);
+    canvas.translate(
+      coordinateSystemOrigin.dx,
+      _chartActualHeight,
+    );
 
     // The first line has an axis, so only text is drawn.
     _drawAxisLabel(
       canvas,
       yAxis[0].toString(),
-      offset: axisLabelOffset,
     );
 
-    canvas.translate(0, -yAxisTickLineHeight);
+    canvas.translate(0.0, -yAxisTickLineHeight);
 
     for (int i = 1; i < yAxis.length; i++) {
       // Drawing coordinate line.
       canvas.drawLine(
         Offset.zero,
-        Offset(size.width - coordinateSystemOrigin.dx, 0),
+        Offset(_chartActualWidth, 0),
         gridLinePaint,
       );
 
@@ -347,11 +352,10 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
         _drawAxisLabel(
           canvas,
           yAxis[i].toString(),
-          offset: axisLabelOffset,
         );
       }
 
-      canvas.translate(0, -yAxisTickLineHeight);
+      canvas.translate(0.0, -yAxisTickLineHeight);
     }
     canvas.restore();
   }
@@ -359,8 +363,8 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   void _drawAxisLabel(
     Canvas canvas,
     String text, {
-    Alignment alignment = Alignment.centerRight,
-    Offset offset = Offset.zero,
+    bool drawXAxis = false,
+    Alignment alignment = Alignment.centerLeft,
   }) {
     final TextSpan textSpan = TextSpan(
       text: text,
@@ -372,18 +376,27 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final Size size = _textPainter.size;
 
-    final Offset offsetPos =
-        Offset(-size.width / 2, -size.height / 2).translate(
-      -size.width / 2 * alignment.x + offset.dx,
-      offset.dy,
+    late double dx;
+    late double dy;
+
+    if (drawXAxis) {
+      dx = 0.0;
+      dy = size.height / 2;
+    } else {
+      dx = size.width + coordinateSystemOrigin.dx;
+      dy = 0.0;
+    }
+
+    final Offset offset = Offset(-size.width / 2, -size.height / 2).translate(
+      -size.width / 2 * alignment.x - dx,
+      dy,
     );
-    _textPainter.paint(canvas, offsetPos);
+    _textPainter.paint(canvas, offset);
   }
 
   void _drawDisplayValueText(
     Canvas canvas, {
     required double dx,
-    required double chartHeight,
     required double displayValue,
   }) {
     final TextSpan textSpan = TextSpan(
@@ -397,26 +410,20 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final Size size = _textPainter.size;
 
-    final Offset offsetPos =
-        Offset(-size.width / 2, -size.height / 2).translate(
+    final Offset offset = Offset(-size.width / 2, -size.height).translate(
       dx,
-      -chartHeight -
-          (slidableLineChartThemeData?.displayValueMarginBottom ??
-              kDisplayValueMarginBottom), // Makes the display value top.
+      -(slidableLineChartThemeData?.displayValueMarginBottom ??
+          kDisplayValueMarginBottom), // Makes the display value top.
     );
-    _textPainter.paint(canvas, offsetPos);
+    _textPainter.paint(canvas, offset);
   }
 
   void _drawCheck(
     Canvas canvas, {
-    required double dx,
+    required double radius,
+    required double x,
+    required double y,
   }) {
-    final double x = dx;
-    final double y =
-        slidableLineChartThemeData?.indicatorMarginTop ?? kIndicatorMarginTop;
-    final double radius =
-        slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
-
     final Path checkPath = Path()
       ..addPolygon(
         <Offset>[
@@ -445,13 +452,10 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
   void _drawClose(
     Canvas canvas, {
-    required double dx,
+    required double radius,
+    required double x,
+    required double y,
   }) {
-    final double x = dx;
-    final double y =
-        slidableLineChartThemeData?.indicatorMarginTop ?? kIndicatorMarginTop;
-    final double radius =
-        slidableLineChartThemeData?.indicatorRadius ?? kIndicatorRadius;
     final double size = radius * 0.8;
 
     Paint paint = Paint()
