@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 
 import 'model/coordinates_options.dart';
@@ -246,11 +247,30 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final Color finalFillAreaColor = fillAreaColor ?? defaultFillAreaColor;
 
-    final Path linePath = coordinates.value.skip(1).fold<Path>(
-          Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
-          (Path path, Coordinate coordinate) =>
-              path..lineTo(coordinate.offset.dx, coordinate.offset.dy),
-        );
+    final bool curved = slidableLineChartThemeData?.curved ?? kCurved;
+
+    late final Path linePath;
+
+    if (curved) {
+      final List<Coordinate> values = coordinates.value;
+
+      linePath = values.take(values.length - 1).foldIndexed<Path>(
+        Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
+        (int index, Path path, Coordinate coordinate) {
+          final Offset p1 = coordinate.offset;
+          final Offset p2 = values[index + 1].offset;
+          final double midX = (p1.dx + p2.dx) / 2;
+
+          return path..cubicTo(midX, p1.dy, midX, p2.dy, p2.dx, p2.dy);
+        },
+      );
+    } else {
+      linePath = coordinates.value.skip(1).fold<Path>(
+            Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
+            (Path path, Coordinate coordinate) =>
+                path..lineTo(coordinate.offset.dx, coordinate.offset.dy),
+          );
+    }
 
     final PathMetrics pathMetrics = linePath.computeMetrics();
 
