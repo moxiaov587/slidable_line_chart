@@ -27,6 +27,7 @@ const Color kCheckBackgroundColor = Colors.blue;
 const Color kCloseBackgroundColor = Colors.red;
 const Color kCheckColor = Colors.white;
 const Color kCloseColor = Colors.white;
+const bool kCurved = false;
 
 @immutable
 class SlidableLineChartThemeData<Enum> {
@@ -51,6 +52,7 @@ class SlidableLineChartThemeData<Enum> {
     this.closeBackgroundColor,
     this.checkColor,
     this.closeColor,
+    this.curved,
   });
 
   /// All coordinates style list.
@@ -167,6 +169,11 @@ class SlidableLineChartThemeData<Enum> {
   /// If this value are null, then [kCloseColor] will be used.
   final Color? closeColor;
 
+  /// Whether the line chart is curve.
+  ///
+  /// If this value are null, then [kCurved] will be used.
+  final bool? curved;
+
   Map<Enum, CoordinatesStyle<Enum>>? get coordinatesStyleMap {
     if (coordinatesStyleList == null || coordinatesStyleList!.isEmpty) {
       return null;
@@ -202,7 +209,8 @@ class SlidableLineChartThemeData<Enum> {
             other.checkBackgroundColor == checkBackgroundColor &&
             other.closeBackgroundColor == closeBackgroundColor &&
             other.checkColor == checkColor &&
-            other.closeColor == closeColor;
+            other.closeColor == closeColor &&
+            other.curved == curved;
       }
 
       for (int i = 0; i < coordinatesStyleList!.length; i++) {
@@ -227,7 +235,8 @@ class SlidableLineChartThemeData<Enum> {
           other.checkBackgroundColor == checkBackgroundColor &&
           other.closeBackgroundColor == closeBackgroundColor &&
           other.checkColor == checkColor &&
-          other.closeColor == closeColor;
+          other.closeColor == closeColor &&
+          other.curved == curved;
     }
 
     return false;
@@ -255,6 +264,7 @@ class SlidableLineChartThemeData<Enum> {
         closeBackgroundColor,
         checkColor,
         closeColor,
+        curved,
       );
 }
 

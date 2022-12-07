@@ -101,6 +101,7 @@ class _MyAppState extends State<MyApp> {
 
   bool reversed = false;
   bool enableInitializationAnimation = true;
+  bool curved = false;
 
   String? result;
 
@@ -158,6 +159,7 @@ class _MyAppState extends State<MyApp> {
                         ),
                       ],
                       showTapArea: true,
+                      curved: curved,
                     ),
                     child: SlidableLineChart(
                       key: _key,
@@ -258,6 +260,19 @@ class _MyAppState extends State<MyApp> {
                     },
                     child: Text(
                       'Reversed',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      // _slidableLineChartState?.resetAnimationController();
+
+                      setState(() => curved = !curved);
+                    },
+                    child: Text(
+                      'Curved',
                       style: Theme.of(context).textTheme.labelLarge!.copyWith(
                             color: Colors.white,
                           ),

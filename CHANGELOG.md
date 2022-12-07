@@ -1,3 +1,7 @@
+## 1.0.2
+
+- Support display as a curve chart.
+
 ## 1.0.1
 
 - Improve performance of drag events.
