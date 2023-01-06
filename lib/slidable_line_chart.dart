@@ -41,9 +41,11 @@ class SlidableLineChart<Enum> extends StatefulWidget {
             'slidePrecision($slidePrecision) must be a multiple of 0.01.'),
         super(key: key);
 
+  /// {@template slidable_line_chart.SlidableLineChart.slidableCoordinateType}
   /// The type of coordinates the user can slide.
   ///
   /// Defaults to null.
+  /// {@endtemplate}
   final Enum? slidableCoordinateType;
 
   /// An array contain coordinates configuration information.
@@ -52,14 +54,19 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// [SlidableLineChartState._coordinatesMap].
   final List<CoordinatesOptions<Enum>> coordinatesOptionsList;
 
+  /// {@template slidable_line_chart.SlidableLineChart.xAxis}
   /// Labels displayed on the x-axis.
+  /// {@endtemplate}
   final List<String> xAxis;
 
+  /// {@template slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
   /// Coordinate system origin offset value.
   ///
   /// Defaults to Offset(6.0, 6.0).
+  /// {@endtemplate}
   final Offset coordinateSystemOrigin;
 
+  /// {@template slidable_line_chart.SlidableLineChart.min}
   /// The minimum value that the user can slide to.
   ///
   /// Must be less than or equal to [max].
@@ -71,8 +78,10 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///
   /// Y-axis generate is also affected by [reversed] and [onlyRenderEvenAxisLabel],
   /// See [SlidableLineChartState._generateYAxis].
+  /// {@endtemplate}
   final int min;
 
+  /// {@template slidable_line_chart.SlidableLineChart.max}
   /// The maximum value that the user can slide to.
   ///
   /// Must be greater than or equal to [min].
@@ -84,37 +93,46 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///
   /// Y-axis generation is also affected by [reversed] and [onlyRenderEvenAxisLabel],
   /// See [SlidableLineChartState._generateYAxis].
+  /// {@endtemplate}
   final int max;
 
+  /// {@template slidable_line_chart.SlidableLineChart.divisions}
   /// The division value of y-axis.
   ///
   /// Defaults to 1. Must be less than or equal to 0.
   ///
   /// Generate [SlidableLineChartState._yAxis] from this value and
   /// [min], [max].
+  /// {@endtemplate}
   final int divisions;
 
+  /// {@template slidable_line_chart.SlidableLineChart.slidePrecision}
   /// The minimum value for each slide by the user.
   ///
   /// Must be a multiple of 0.01.
   ///
   /// If this value are null, then [divisions] will be used.
+  /// {@endtemplate}
   final double? slidePrecision;
 
+  /// {@template slidable_line_chart.SlidableLineChart.reversed}
   /// Whether the coordinate system is reversed.
   ///
   /// Defaults to false.
   ///
   /// This value affects the generation of the Y-axis.
   /// See [SlidableLineChartState._generateYAxis].
+  /// {@endtemplate}
   final bool reversed;
 
+  /// {@template slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
   /// Whether the y-axis label renders only even items.
   ///
   /// Defaults to true.
   ///
   /// This value affects the generation of the Y-axis.
   /// See [SlidableLineChartState._generateYAxis].
+  /// {@endtemplate}
   final bool onlyRenderEvenAxisLabel;
 
   /// Whether the coordinate system triggers animation when initialized.
@@ -127,6 +145,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Defaults to Duration(seconds: 1).
   final Duration initializationAnimationDuration;
 
+  /// {@template slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
   /// Called when the user slides coordinate, the return value determines the
   /// indicator type.
   ///
@@ -136,6 +155,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   /// Defaults to null, nothing.
   ///
   /// See [CoordinateSystemPainter.drawCoordinates].
+  /// {@endtemplate}
   final OnDrawIndicator? onDrawCheckOrClose;
 
   /// Called when the user slides coordinate.
@@ -176,14 +196,36 @@ class SlidableLineChart<Enum> extends StatefulWidget {
 
 class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     with TickerProviderStateMixin {
+  /// {@template slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
+  /// Animation controller with slidable line chart.
+  ///
+  /// Animation reset for controlling slidable line charts and other line charts
+  /// separately.
+  ///
+  /// See [resetAnimationController].
+  /// {@endtemplate}
   AnimationController? _slidableCoordinatesAnimationController;
 
+  /// {@template slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
+  /// Animation controller with other line chart.
+  ///
+  /// Animation reset for controlling slidable line charts and other line charts
+  /// separately.
+  ///
+  /// See [resetAnimationController].
+  /// {@endtemplate}
   AnimationController? _otherCoordinatesAnimationController;
 
+  /// {@template slidable_line_chart.SlidableLineChartState._currentSlideCoordinateIndex}
   /// The index of the current sliding coordinate.
+  /// {@endtemplate}
   int? _currentSlideCoordinateIndex;
 
-  num get _slidePrecision => widget.slidePrecision ?? widget.divisions;
+  /// {@macro slidable_line_chart.SlidableLineChartState._currentSlideCoordinateIndex}
+  int? get currentSlideCoordinateIndex => _currentSlideCoordinateIndex;
+
+  /// {@macro slidable_line_chart.SlidableLineChart.slidePrecision}
+  num get slidePrecision => widget.slidePrecision ?? widget.divisions;
 
   /// Slidable coordinates.
   ///
@@ -191,17 +233,21 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   Coordinates<Enum>? get _slidableCoordinates =>
       _coordinatesMap[widget.slidableCoordinateType];
 
+  /// {@template slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
   /// Get X-axis tick line width from the length of [SlidableLineChart.xAxis].
   ///
   /// Calculate by subtracting `dx` from [SlidableLineChart.coordinateSystemOrigin].
   ///
   /// This value divided by 2 is dx for the coordinate offset.
+  /// {@endtemplate}
   double _getXAxisTickLineWidth(double chartActualWidth) =>
       chartActualWidth / widget.xAxis.length;
 
+  /// {@template slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
   /// Get Y-axis tick line height from the length of [_yAxis].
   ///
   /// Calculate by subtracting `dy` from [SlidableLineChart.coordinateSystemOrigin].
+  /// {@endtemplate}
   double _getYAxisTickLineHeight(double chartActualHeight) =>
       chartActualHeight / (_yAxis.length - 1);
 
@@ -213,6 +259,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// See [_generateYAxis].
   late int _yAxisMaxValue;
 
+  /// {@template slidable_line_chart.SlidableLineChartState._percentDerivedArea}
   /// Percentage of the coordinate system outside the sliding area.
   ///
   /// Derived area due to [SlidableLineChart.max] and [SlidableLineChart.onlyRenderEvenAxisLabel]
@@ -221,7 +268,11 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// Used to limit the range offset values the user can slide.
   ///
   /// See [_generateYAxis].
+  /// {@endtemplate}
   late double _percentDerivedArea;
+
+  /// {@macro slidable_line_chart.SlidableLineChartState._percentDerivedArea}
+  double get percentDerivedArea => _percentDerivedArea;
 
   /// The number of rows the derived region occupies on the Y-axis.
   ///
@@ -230,8 +281,8 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
   /// Minimum number of logical rows in the sliding area.
   ///
-  /// When [SlidableLineChart.divisions] is 1 and [_slidePrecision] is 0.1,
-  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slidePrecision].
+  /// When [SlidableLineChart.divisions] is 1 and [slidePrecision] is 0.1,
+  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [slidePrecision].
   ///
   /// Used to limit the range number of logical rows the user can slide.
   ///
@@ -240,8 +291,8 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
   /// Maximum number of logical rows in the sliding area.
   ///
-  /// When [SlidableLineChart.divisions] is 1 and [_slidePrecision] is 0.1,
-  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [_slidePrecision].
+  /// When [SlidableLineChart.divisions] is 1 and [slidePrecision] is 0.1,
+  /// `Logic rows number` should be 10, i.e. [SlidableLineChart.divisions] / [slidePrecision].
   ///
   /// Used to limit the range number of logical rows the user can slide.
   ///
@@ -298,10 +349,9 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     late double result;
 
     if (widget.reversed) {
-      result = dyLogicRowsNumberOnSlidingArea * _slidePrecision + widget.min;
+      result = dyLogicRowsNumberOnSlidingArea * slidePrecision + widget.min;
     } else {
-      result =
-          _yAxisMaxValue - dyLogicRowsNumberOnSlidingArea * _slidePrecision;
+      result = _yAxisMaxValue - dyLogicRowsNumberOnSlidingArea * slidePrecision;
     }
 
     return double.parse(
@@ -324,18 +374,28 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
     return index;
   }
 
+  /// {@template slidable_line_chart.SlidableLineChartState._yAxis}
   /// Text display on Y-axis.
   ///
   /// See [_generateYAxis].
+  /// {@endtemplate}
   late List<int> _yAxis;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
+  List<int> get yAxis => _yAxis;
+
+  /// {@template slidable_line_chart.SlidableLineChartState._coordinatesMap}
   /// [Map] containing all coordinates data.
   ///
   /// Generated by [SlidableLineChart.coordinatesOptionsList] and rendered later
   /// by modifying it.
   ///
   /// See [build].
+  /// {@endtemplate}
   late Map<Enum, Coordinates<Enum>> _coordinatesMap;
+
+  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
+  Map<Enum, Coordinates<Enum>> get coordinatesMap => _coordinatesMap;
 
   /// Generate minimum and maximum values for the number of logical rows on the
   /// y-Axis sliding area.
@@ -352,13 +412,13 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
       _maxLogicRowsNumberOnSlidingArea =
           (numberOfRowsDisplayedOnYAxis - _numberOfRowsOnDerivedArea) *
               widget.divisions /
-              _slidePrecision;
+              slidePrecision;
     } else {
       _minLogicRowsNumberOnSlidingArea =
-          _numberOfRowsOnDerivedArea * widget.divisions / _slidePrecision;
+          _numberOfRowsOnDerivedArea * widget.divisions / slidePrecision;
 
       _maxLogicRowsNumberOnSlidingArea =
-          numberOfRowsDisplayedOnYAxis * widget.divisions / _slidePrecision;
+          numberOfRowsDisplayedOnYAxis * widget.divisions / slidePrecision;
     }
   }
 
