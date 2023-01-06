@@ -40,38 +40,53 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
           ),
         );
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
   final AnimationController? slidableCoordinatesAnimationController;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
   final AnimationController? otherCoordinatesAnimationController;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.slidableCoordinateType}
   final Enum? slidableCoordinateType;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
   final Map<Enum, Coordinates<Enum>> coordinatesMap;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.xAxis}
   final List<String> xAxis;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
   final List<int> yAxis;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.min}
   final int min;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.max}
   final int max;
 
   final double maxOffsetValueOnYAxisSlidingArea;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
   final Offset coordinateSystemOrigin;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.divisions}
   final int divisions;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.reversed}
   final bool reversed;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
   final bool onlyRenderEvenAxisLabel;
 
   final SlidableLineChartThemeData<Enum>? slidableLineChartThemeData;
 
+  /// {@macro slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
   final OnDrawIndicator? onDrawCheckOrClose;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
   final GetXAxisTickLineWidth getXAxisTickLineWidth;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
   final GetYAxisTickLineHeight getYAxisTickLineHeight;
 
   Color get defaultCoordinatePointColor =>
