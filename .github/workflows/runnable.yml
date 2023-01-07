@@ -1,0 +1,134 @@
+name: Runnable (stable)
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup java sdk
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11.x'
+
+
+      - name: Setup flutter sdk
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze the repo
+        run: flutter analyze lib example/lib
+
+      - name: Run tests
+        run: flutter test
+
+  build_iOS:
+    needs: analyze
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup java sdk
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11.x'
+
+      - name: Setup flutter sdk
+        uses: subosito/flutter-action@v2
+        with:
+          architecture: x64
+          channel: 'stable'
+
+      - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build ios
+        run: cd example; flutter build ios --no-codesign
+
+  build_android:
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup java sdk
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11.x'
+
+      - name: Setup flutter sdk
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build apk
+        run: cd example; flutter build apk --debug
+
+  build_web:
+    needs: analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup java sdk
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'adopt'
+          java-version: '11.x'
+
+      - name: Setup flutter sdk
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web
+        run: cd example; flutter build web
