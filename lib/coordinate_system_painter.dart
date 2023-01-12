@@ -262,14 +262,14 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final Color finalFillAreaColor = fillAreaColor ?? defaultFillAreaColor;
 
-    final bool curved = slidableLineChartThemeData?.curved ?? kCurved;
+    final double smooth = slidableLineChartThemeData?.smooth ?? kSmooth;
 
     late final Path linePath;
 
     final List<Coordinate> values = coordinates.value;
 
     // By https://github.com/apache/echarts/blob/master/src/chart/line/poly.ts
-    if (values.length > 2 && curved) {
+    if (values.length > 2 && smooth > 0.0) {
       // Is first coordinate
       final Offset first = values.first.offset;
       linePath = Path()..moveTo(first.dx, first.dy);
@@ -296,8 +296,6 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
         // Use ratio of segment length.
         ratio = lenNextSeg / (lenNextSeg + lenPrevSeg);
-
-        const double smooth = 0.5;
 
         controlPoint1 = Offset(
           current.dx - vector.dx * smooth * (1 - ratio),

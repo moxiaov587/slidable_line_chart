@@ -101,7 +101,7 @@ class _MyAppState extends State<MyApp> {
 
   bool reversed = false;
   bool enableInitializationAnimation = true;
-  bool curved = false;
+  double smooth = 0.0;
 
   String? result;
 
@@ -159,7 +159,7 @@ class _MyAppState extends State<MyApp> {
                         ),
                       ],
                       showTapArea: true,
-                      curved: curved,
+                      smooth: smooth,
                     ),
                     child: SlidableLineChart(
                       key: _key,
@@ -269,10 +269,10 @@ class _MyAppState extends State<MyApp> {
                     onPressed: () {
                       // _slidableLineChartState?.resetAnimationController();
 
-                      setState(() => curved = !curved);
+                      setState(() => smooth = smooth == 0.0 ? 0.5 : 0.0);
                     },
                     child: Text(
-                      'Curved',
+                      'Smooth',
                       style: Theme.of(context).textTheme.labelLarge!.copyWith(
                             color: Colors.white,
                           ),
