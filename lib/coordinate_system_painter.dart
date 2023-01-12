@@ -1,6 +1,6 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
 
 import 'model/coordinates_options.dart';
@@ -262,25 +262,105 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
 
     final Color finalFillAreaColor = fillAreaColor ?? defaultFillAreaColor;
 
-    final bool curved = slidableLineChartThemeData?.curved ?? kCurved;
+    final double smooth = slidableLineChartThemeData?.smooth ?? kSmooth;
 
     late final Path linePath;
 
-    if (curved) {
-      final List<Coordinate> values = coordinates.value;
+    final List<Coordinate> values = coordinates.value;
 
-      linePath = values.take(values.length - 1).foldIndexed<Path>(
-        Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
-        (int index, Path path, Coordinate coordinate) {
-          final Offset p1 = coordinate.offset;
-          final Offset p2 = values[index + 1].offset;
-          final double midX = (p1.dx + p2.dx) / 2;
+    // By https://github.com/apache/echarts/blob/master/src/chart/line/poly.ts
+    if (values.length > 2 && smooth > 0.0) {
+      // Is first coordinate
+      final Offset first = values.first.offset;
+      linePath = Path()..moveTo(first.dx, first.dy);
+      Offset controlPoint0 = Offset(first.dx, first.dy);
+      Offset prev = Offset(first.dx, first.dy);
 
-          return path..cubicTo(midX, p1.dy, midX, p2.dy, p2.dx, p2.dy);
-        },
-      );
+      late Offset controlPoint1;
+
+      for (int index = 1; index < values.length - 1; index++) {
+        final Offset current = values[index].offset;
+        final Offset next = values[index + 1].offset;
+
+        double ratio = 0.5;
+        Offset vector = Offset.zero;
+        late Offset nextControlPoint0;
+
+        vector = Offset(next.dx - prev.dx, next.dy - prev.dy);
+
+        final Offset d0 = Offset(current.dx - prev.dx, current.dy - prev.dy);
+        final Offset d1 = Offset(next.dx - current.dx, next.dy - current.dy);
+
+        final double lenPrevSeg = math.sqrt(d0.dx * d0.dx + d0.dy * d0.dy);
+        final double lenNextSeg = math.sqrt(d1.dx * d1.dx + d1.dy * d1.dy);
+
+        // Use ratio of segment length.
+        ratio = lenNextSeg / (lenNextSeg + lenPrevSeg);
+
+        controlPoint1 = Offset(
+          current.dx - vector.dx * smooth * (1 - ratio),
+          current.dy - vector.dy * smooth * (1 - ratio),
+        );
+
+        // controlPoint0 of next segment.
+        nextControlPoint0 = Offset(
+          current.dx + vector.dx * smooth * ratio,
+          current.dy + vector.dy * smooth * ratio,
+        );
+
+        // Smooth constraint between point and next point.
+        // Avoid exceeding extreme after smoothing.
+        nextControlPoint0 = Offset(
+          math.min(nextControlPoint0.dx, math.max(next.dx, current.dx)),
+          math.min(nextControlPoint0.dy, math.max(next.dy, current.dy)),
+        );
+        nextControlPoint0 = Offset(
+          math.max(nextControlPoint0.dx, math.min(next.dx, current.dx)),
+          math.max(nextControlPoint0.dy, math.min(next.dy, current.dy)),
+        );
+
+        // Recalculate controlPoint1 based on the adjusted controlPoint0 of next
+        // segment.
+        vector = Offset(nextControlPoint0.dx - current.dx,
+            nextControlPoint0.dy - current.dy);
+
+        controlPoint1 = Offset(current.dx - vector.dx * lenPrevSeg / lenNextSeg,
+            current.dy - vector.dy * lenPrevSeg / lenNextSeg);
+
+        // Smooth constraint between point and pre point.
+        // Avoid exceeding extreme after smoothing.
+        controlPoint1 = Offset(
+          math.min(controlPoint1.dx, math.max(prev.dx, current.dx)),
+          math.min(controlPoint1.dy, math.max(prev.dy, current.dy)),
+        );
+        controlPoint1 = Offset(
+          math.max(controlPoint1.dx, math.min(prev.dx, current.dx)),
+          math.max(controlPoint1.dy, math.min(prev.dy, current.dy)),
+        );
+
+        // Adjust nextControlPoint0 again.
+        vector = Offset(
+          current.dx - controlPoint1.dx,
+          current.dy - controlPoint1.dy,
+        );
+        nextControlPoint0 = Offset(
+          current.dx + vector.dx * lenNextSeg / lenPrevSeg,
+          current.dy + vector.dy * lenNextSeg / lenPrevSeg,
+        );
+
+        linePath.cubicTo(controlPoint0.dx, controlPoint0.dy, controlPoint1.dx,
+            controlPoint1.dy, current.dx, current.dy);
+
+        controlPoint0 = Offset(nextControlPoint0.dx, nextControlPoint0.dy);
+        prev = Offset(current.dx, current.dy);
+      }
+
+      // Is last coordinate
+      final Offset last = values.last.offset;
+      linePath.cubicTo(controlPoint0.dx, controlPoint0.dy, last.dx, last.dy,
+          last.dx, last.dy);
     } else {
-      linePath = coordinates.value.skip(1).fold<Path>(
+      linePath = values.skip(1).fold<Path>(
             Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
             (Path path, Coordinate coordinate) =>
                 path..lineTo(coordinate.offset.dx, coordinate.offset.dy),

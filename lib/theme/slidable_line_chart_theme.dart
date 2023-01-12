@@ -27,7 +27,7 @@ const Color kCheckBackgroundColor = Colors.blue;
 const Color kCloseBackgroundColor = Colors.red;
 const Color kCheckColor = Colors.white;
 const Color kCloseColor = Colors.white;
-const bool kCurved = false;
+const double kSmooth = 0.0;
 
 @immutable
 class SlidableLineChartThemeData<Enum> {
@@ -52,8 +52,9 @@ class SlidableLineChartThemeData<Enum> {
     this.closeBackgroundColor,
     this.checkColor,
     this.closeColor,
-    this.curved,
-  });
+    this.smooth,
+  }) : assert(smooth == null || (smooth >= 0.0 && smooth <= 1.0),
+            'smooth($smooth) must be between [0-1]');
 
   /// All coordinates style list.
   ///
@@ -169,10 +170,14 @@ class SlidableLineChartThemeData<Enum> {
   /// If this value are null, then [kCloseColor] will be used.
   final Color? closeColor;
 
-  /// Whether the line chart is curve.
+  /// Smoothness of the line chart.
   ///
-  /// If this value are null, then [kCurved] will be used.
-  final bool? curved;
+  /// Value range is [0-1], smaller means closer to the polyline.
+  ///
+  /// Typically, 0.5 is used to display as curve.
+  ///
+  /// If this value are null, then [kSmooth] will be used.
+  final double? smooth;
 
   Map<Enum, CoordinatesStyle<Enum>>? get coordinatesStyleMap {
     if (coordinatesStyleList == null || coordinatesStyleList!.isEmpty) {
@@ -210,7 +215,7 @@ class SlidableLineChartThemeData<Enum> {
             other.closeBackgroundColor == closeBackgroundColor &&
             other.checkColor == checkColor &&
             other.closeColor == closeColor &&
-            other.curved == curved;
+            other.smooth == smooth;
       }
 
       for (int i = 0; i < coordinatesStyleList!.length; i++) {
@@ -236,7 +241,7 @@ class SlidableLineChartThemeData<Enum> {
           other.closeBackgroundColor == closeBackgroundColor &&
           other.checkColor == checkColor &&
           other.closeColor == closeColor &&
-          other.curved == curved;
+          other.smooth == smooth;
     }
 
     return false;
@@ -264,7 +269,7 @@ class SlidableLineChartThemeData<Enum> {
         closeBackgroundColor,
         checkColor,
         closeColor,
-        curved,
+        smooth,
       );
 }
 

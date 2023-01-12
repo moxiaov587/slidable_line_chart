@@ -85,4 +85,4 @@ Fields in `SlidableLineChartThemeData`:
 | closeBackgroundColor        | `Color?`                         | Background color for close indicator on the coordinate system.    | `null`        |
 | checkColor                  | `Color?`                         | Color for check symbol on the coordinate system.                  | `null`        |
 | closeColor                  | `Color?`                         | Color for close symbol on the coordinate system.                  | `null`        |
-| curved                      | `bool?`                          | Whether the line chart is curve.                                  | `null`        |
+| smooth                      | `double?`                        | Smoothness of the line chart.                                     | `null`        |
