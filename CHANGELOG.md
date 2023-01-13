@@ -1,3 +1,14 @@
+## 1.1.0
+
+- Improve curve chart display.
+- Constraint plugin generic type should be an enum.
+- Add color palette to optimize display when no theme is set.
+- Add the simplest example usage.
+- Fix an issue where the opacity of some colors could be overridden.
+- **BREAKING CHANGE**
+  - Refactor `curved` to `smooth`, now use `smooth` to set smoothness.
+  - Remove `defaultCoordinatePointColor`, `defaultTapAreaColor` and `defaultFillAreaColor`, now if these styles are not set, they will be set based on the coordinate point color.
+
 ## 1.0.2
 
 - Support display as a curve chart.
@@ -13,7 +24,7 @@
 - Optimized sliding calculation method.
 - Export `SlidableLineChartState` to provide `resetAnimationController`.
 - Update example to provide more use cases.
--  **BREAKING CHANGE**
+- **BREAKING CHANGE**
   - Now the diagram itself doesn't maintain any state and needs to be updated via the `onChanged` callback.
   - Remove the style-related property from the `SlidableLineChart` and now replace it with `SlidableLineChartThemeData`.
   - Use `coordinatesOptionsList` instead of `allCoordinates` to simplify parameter entry.
