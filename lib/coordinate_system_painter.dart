@@ -89,16 +89,6 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
   /// {@macro slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
   final GetYAxisTickLineHeight getYAxisTickLineHeight;
 
-  Color get defaultCoordinatePointColor =>
-      slidableLineChartThemeData?.defaultCoordinatePointColor ??
-      kDefaultCoordinatePointColor;
-  Color get defaultLineColor =>
-      slidableLineChartThemeData?.defaultLineColor ?? kDefaultLineColor;
-  Color get defaultFillAreaColor =>
-      slidableLineChartThemeData?.defaultFillAreaColor ??
-      slidableLineChartThemeData?.defaultCoordinatePointColor ??
-      kDefaultFillAreaColor;
-
   final TextPainter _textPainter =
       TextPainter(textDirection: TextDirection.ltr);
 
@@ -170,20 +160,22 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final CoordinatesStyle<E>? coordinatesStyle =
           coordinatesStyleMap?[coordinates.type];
 
+      final Color finalCoordinatePointColor = coordinatesStyle?.pointColor ??
+          kColorPalette[coordinates.type.index % kColorPalette.length];
+
       drawLineAndFillArea(
         canvas,
         animationController: otherCoordinatesAnimationController,
         coordinates: coordinates,
-        lineColor: coordinatesStyle?.lineColor,
-        fillAreaColor: coordinatesStyle?.fillAreaColor,
+        lineColor: coordinatesStyle?.lineColor ?? finalCoordinatePointColor,
+        fillAreaColor:
+            coordinatesStyle?.fillAreaColor ?? finalCoordinatePointColor,
       );
 
       for (final Coordinate coordinate in coordinates.value) {
         coordinate.drawCoordinatePoint(
           canvas,
-          coordinatePointPaint
-            ..color =
-                coordinatesStyle?.pointColor ?? defaultCoordinatePointColor,
+          coordinatePointPaint..color = finalCoordinatePointColor,
         );
       }
     }
@@ -195,12 +187,18 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final CoordinatesStyle<E>? slidableCoordinatesStyle =
           coordinatesStyleMap?[slidableCoordinates.type];
 
+      final Color finalSlidableCoordinatePointColor = slidableCoordinatesStyle
+              ?.pointColor ??
+          kColorPalette[slidableCoordinateType!.index % kColorPalette.length];
+
       drawLineAndFillArea(
         canvas,
         animationController: slidableCoordinatesAnimationController,
         coordinates: slidableCoordinates,
-        lineColor: slidableCoordinatesStyle?.lineColor,
-        fillAreaColor: slidableCoordinatesStyle?.fillAreaColor,
+        lineColor: slidableCoordinatesStyle?.lineColor ??
+            finalSlidableCoordinatePointColor,
+        fillAreaColor: slidableCoordinatesStyle?.fillAreaColor ??
+            finalSlidableCoordinatePointColor,
       );
 
       for (final Coordinate coordinate in slidableCoordinates.value) {
@@ -209,17 +207,13 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             canvas,
             tapAreaPaint
               ..color = slidableCoordinatesStyle?.tapAreaColor ??
-                  slidableCoordinatesStyle?.pointColor?.withOpacity(.2) ??
-                  slidableLineChartThemeData?.defaultTapAreaColor ??
-                  kTapAreaColor,
+                  finalSlidableCoordinatePointColor.withOpacity(.2),
           );
         }
 
         coordinate.drawCoordinatePoint(
           canvas,
-          coordinatePointPaint
-            ..color = slidableCoordinatesStyle?.pointColor ??
-                defaultCoordinatePointColor,
+          coordinatePointPaint..color = finalSlidableCoordinatePointColor,
         );
 
         _drawDisplayValueText(
@@ -255,12 +249,10 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     Canvas canvas, {
     required AnimationController? animationController,
     required Coordinates<E> coordinates,
-    Color? lineColor,
-    Color? fillAreaColor,
+    required Color lineColor,
+    required Color fillAreaColor,
   }) {
     final Offset firstCoordinateOffset = coordinates.value.first.offset;
-
-    final Color finalFillAreaColor = fillAreaColor ?? defaultFillAreaColor;
 
     final double smooth = slidableLineChartThemeData?.smooth ?? kSmooth;
 
@@ -375,10 +367,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
       final Path path = pathMetric.extractPath(0.0, progress);
 
-      canvas.drawPath(
-        path,
-        linePaint..color = lineColor ?? defaultLineColor,
-      );
+      canvas.drawPath(path, linePaint..color = lineColor);
 
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);
 
@@ -396,8 +385,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: <Color>[
-              finalFillAreaColor.withOpacity(0.2),
-              finalFillAreaColor,
+              fillAreaColor.withOpacity(0.2),
+              fillAreaColor,
             ],
           ).createShader(
             Rect.fromLTWH(
