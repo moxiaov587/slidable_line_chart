@@ -1,7 +1,7 @@
 name: slidable_line_chart
 description: A line chart plugin that responds to user sliding. Supports reverse and custom slide precision.
 repository: https://github.com/moxiaov587/slidable_line_chart
-version: 1.0.2
+version: 1.1.0
 
 environment:
   sdk: ">=2.16.2 <3.0.0"
