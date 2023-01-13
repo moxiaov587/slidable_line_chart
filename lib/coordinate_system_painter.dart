@@ -12,7 +12,7 @@ typedef GetXAxisTickLineWidth = double Function(double chartActualWidth);
 
 typedef GetYAxisTickLineHeight = double Function(double chartActualHeight);
 
-class CoordinateSystemPainter<Enum> extends CustomPainter {
+class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
   CoordinateSystemPainter({
     required this.slidableCoordinatesAnimationController,
     required this.otherCoordinatesAnimationController,
@@ -47,10 +47,10 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   final AnimationController? otherCoordinatesAnimationController;
 
   /// {@macro slidable_line_chart.SlidableLineChart.slidableCoordinateType}
-  final Enum? slidableCoordinateType;
+  final E? slidableCoordinateType;
 
   /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
-  final Map<Enum, Coordinates<Enum>> coordinatesMap;
+  final Map<E, Coordinates<E>> coordinatesMap;
 
   /// {@macro slidable_line_chart.SlidableLineChart.xAxis}
   final List<String> xAxis;
@@ -78,7 +78,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   /// {@macro slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
   final bool onlyRenderEvenAxisLabel;
 
-  final SlidableLineChartThemeData<Enum>? slidableLineChartThemeData;
+  final SlidableLineChartThemeData<E>? slidableLineChartThemeData;
 
   /// {@macro slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
   final OnDrawIndicator? onDrawCheckOrClose;
@@ -157,17 +157,17 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
     Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
-    final Map<Enum, CoordinatesStyle<Enum>>? coordinatesStyleMap =
+    final Map<E, CoordinatesStyle<E>>? coordinatesStyleMap =
         slidableLineChartThemeData?.coordinatesStyleMap;
 
     // Draw other coordinates first so that the slidable coordinates are drawn at
     // the top level.
-    for (final Coordinates<Enum> coordinates in coordinatesMap.values) {
+    for (final Coordinates<E> coordinates in coordinatesMap.values) {
       if (coordinates.type == slidableCoordinateType) {
         continue; // Skip slidable coordinates.
       }
 
-      final CoordinatesStyle<Enum>? coordinatesStyle =
+      final CoordinatesStyle<E>? coordinatesStyle =
           coordinatesStyleMap?[coordinates.type];
 
       drawLineAndFillArea(
@@ -188,11 +188,11 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
       }
     }
 
-    final Coordinates<Enum>? slidableCoordinates =
+    final Coordinates<E>? slidableCoordinates =
         coordinatesMap[slidableCoordinateType];
 
     if (slidableCoordinates != null) {
-      final CoordinatesStyle<Enum>? slidableCoordinatesStyle =
+      final CoordinatesStyle<E>? slidableCoordinatesStyle =
           coordinatesStyleMap?[slidableCoordinates.type];
 
       drawLineAndFillArea(
@@ -254,7 +254,7 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   void drawLineAndFillArea(
     Canvas canvas, {
     required AnimationController? animationController,
-    required Coordinates<Enum> coordinates,
+    required Coordinates<E> coordinates,
     Color? lineColor,
     Color? fillAreaColor,
   }) {
@@ -599,6 +599,5 @@ class CoordinateSystemPainter<Enum> extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CoordinateSystemPainter<Enum> oldDelegate) =>
-      true;
+  bool shouldRepaint(covariant CoordinateSystemPainter<E> oldDelegate) => true;
 }

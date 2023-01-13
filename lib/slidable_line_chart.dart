@@ -12,10 +12,10 @@ import 'theme/slidable_line_chart_theme.dart';
 export 'model/coordinates_options.dart' show CoordinatesOptions;
 export 'theme/slidable_line_chart_theme.dart';
 
-typedef CoordinatesOptionsChanged<Enum> = void Function(
-    List<CoordinatesOptions<Enum>> options);
+typedef CoordinatesOptionsChanged<E extends Enum> = void Function(
+    List<CoordinatesOptions<E>> options);
 
-class SlidableLineChart<Enum> extends StatefulWidget {
+class SlidableLineChart<E extends Enum> extends StatefulWidget {
   const SlidableLineChart({
     Key? key,
     this.slidableCoordinateType,
@@ -46,13 +46,13 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///
   /// Defaults to null.
   /// {@endtemplate}
-  final Enum? slidableCoordinateType;
+  final E? slidableCoordinateType;
 
   /// An array contain coordinates configuration information.
   ///
   /// use [SlidableLineChartState.build] generates
   /// [SlidableLineChartState._coordinatesMap].
-  final List<CoordinatesOptions<Enum>> coordinatesOptionsList;
+  final List<CoordinatesOptions<E>> coordinatesOptionsList;
 
   /// {@template slidable_line_chart.SlidableLineChart.xAxis}
   /// Labels displayed on the x-axis.
@@ -171,7 +171,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///    sliding the coordinate.
   /// * [onChangeEnd] for a callback that is called when the user stops
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<Enum>? onChange;
+  final CoordinatesOptionsChanged<E>? onChange;
 
   /// Called when the user starts sliding coordinate.
   ///
@@ -179,7 +179,7 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///
   /// * [onChangeEnd] for a callback that is called when the user stops
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<Enum>? onChangeStart;
+  final CoordinatesOptionsChanged<E>? onChangeStart;
 
   /// Called when the user stops sliding coordinate.
   ///
@@ -187,14 +187,13 @@ class SlidableLineChart<Enum> extends StatefulWidget {
   ///
   /// * [onChangeStart] for a callback that is called when the user starts
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<Enum>? onChangeEnd;
+  final CoordinatesOptionsChanged<E>? onChangeEnd;
 
   @override
-  State<SlidableLineChart<Enum>> createState() =>
-      SlidableLineChartState<Enum>();
+  State<SlidableLineChart<E>> createState() => SlidableLineChartState<E>();
 }
 
-class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
+class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     with TickerProviderStateMixin {
   /// {@template slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
   /// Animation controller with slidable line chart.
@@ -230,7 +229,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   /// Slidable coordinates.
   ///
   /// Null when [SlidableLineChart.slidableCoordinateType] is null.
-  Coordinates<Enum>? get _slidableCoordinates =>
+  Coordinates<E>? get _slidableCoordinates =>
       _coordinatesMap[widget.slidableCoordinateType];
 
   /// {@template slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
@@ -392,10 +391,10 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   ///
   /// See [build].
   /// {@endtemplate}
-  late Map<Enum, Coordinates<Enum>> _coordinatesMap;
+  late Map<E, Coordinates<E>> _coordinatesMap;
 
   /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
-  Map<Enum, Coordinates<Enum>> get coordinatesMap => _coordinatesMap;
+  Map<E, Coordinates<E>> get coordinatesMap => _coordinatesMap;
 
   /// Generate minimum and maximum values for the number of logical rows on the
   /// y-Axis sliding area.
@@ -520,7 +519,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
   }
 
   @override
-  void didUpdateWidget(covariant SlidableLineChart<Enum> oldWidget) {
+  void didUpdateWidget(covariant SlidableLineChart<E> oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.reversed != widget.reversed ||
@@ -577,10 +576,10 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
         final double yAxisDisplayValue2OffsetValueFactor =
             _getYAxisDisplayValue2OffsetValueFactor(chartActualHeight);
 
-        _coordinatesMap = <Enum, Coordinates<Enum>>{
-          for (final CoordinatesOptions<Enum> options
+        _coordinatesMap = <E, Coordinates<E>>{
+          for (final CoordinatesOptions<E> options
               in widget.coordinatesOptionsList)
-            options.type: Coordinates<Enum>(
+            options.type: Coordinates<E>(
               type: options.type,
               value: options.values
                   .mapIndexed(
@@ -623,7 +622,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
         final Widget coordinateSystemPainter = CustomPaint(
           size: Size(chartWidth, chartHeight),
           isComplex: true,
-          painter: CoordinateSystemPainter<Enum>(
+          painter: CoordinateSystemPainter<E>(
             slidableCoordinatesAnimationController:
                 _slidableCoordinatesAnimationController,
             otherCoordinatesAnimationController:
@@ -640,7 +639,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
             coordinateSystemOrigin: widget.coordinateSystemOrigin,
             maxOffsetValueOnYAxisSlidingArea: maxOffsetValueOnYAxisSlidingArea,
             slidableLineChartThemeData:
-                SlidableLineChartTheme.maybeOf<Enum>(context),
+                SlidableLineChartTheme.maybeOf<E>(context),
             onDrawCheckOrClose: widget.onDrawCheckOrClose,
             getXAxisTickLineWidth: _getXAxisTickLineWidth,
             getYAxisTickLineHeight: _getYAxisTickLineHeight,
@@ -669,7 +668,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
                 _hitTestCoordinate(details.localPosition);
 
             widget.onChangeStart?.call(_coordinatesMap.values
-                .map((Coordinates<Enum> coordinates) => coordinates.toOptions())
+                .map((Coordinates<E> coordinates) => coordinates.toOptions())
                 .toList());
           },
           onVerticalDragUpdate: (DragUpdateDetails details) {
@@ -690,7 +689,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
 
               widget.onChange!.call(_coordinatesMap.values
                   .map(
-                    (Coordinates<Enum> coordinates) => coordinates.toOptions(),
+                    (Coordinates<E> coordinates) => coordinates.toOptions(),
                   )
                   .toList());
             }
@@ -699,7 +698,7 @@ class SlidableLineChartState<Enum> extends State<SlidableLineChart<Enum>>
             _currentSlideCoordinateIndex = null;
 
             widget.onChangeEnd?.call(_coordinatesMap.values
-                .map((Coordinates<Enum> coordinates) => coordinates.toOptions())
+                .map((Coordinates<E> coordinates) => coordinates.toOptions())
                 .toList());
           },
           onVerticalDragCancel: () {

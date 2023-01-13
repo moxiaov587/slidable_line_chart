@@ -30,7 +30,7 @@ const Color kCloseColor = Colors.white;
 const double kSmooth = 0.0;
 
 @immutable
-class SlidableLineChartThemeData<Enum> {
+class SlidableLineChartThemeData<E extends Enum> {
   const SlidableLineChartThemeData({
     this.coordinatesStyleList,
     this.axisLabelStyle,
@@ -61,7 +61,7 @@ class SlidableLineChartThemeData<Enum> {
   /// Can specify a style for each type of coordinates individually.
   ///
   /// The latter overrides the former when style of the same type exists.
-  final List<CoordinatesStyle<Enum>>? coordinatesStyleList;
+  final List<CoordinatesStyle<E>>? coordinatesStyleList;
 
   /// Axis label style for the coordinate system.
   ///
@@ -179,20 +179,20 @@ class SlidableLineChartThemeData<Enum> {
   /// If this value are null, then [kSmooth] will be used.
   final double? smooth;
 
-  Map<Enum, CoordinatesStyle<Enum>>? get coordinatesStyleMap {
+  Map<E, CoordinatesStyle<E>>? get coordinatesStyleMap {
     if (coordinatesStyleList == null || coordinatesStyleList!.isEmpty) {
       return null;
     }
 
-    return <Enum, CoordinatesStyle<Enum>>{
-      for (final CoordinatesStyle<Enum> item in coordinatesStyleList!)
+    return <E, CoordinatesStyle<E>>{
+      for (final CoordinatesStyle<E> item in coordinatesStyleList!)
         item.type: item
     };
   }
 
   @override
   bool operator ==(Object other) {
-    if (other is SlidableLineChartThemeData<Enum>) {
+    if (other is SlidableLineChartThemeData<E>) {
       if (coordinatesStyleList?.length != other.coordinatesStyleList?.length) {
         return false;
       }
@@ -273,7 +273,7 @@ class SlidableLineChartThemeData<Enum> {
       );
 }
 
-class SlidableLineChartTheme<Enum> extends InheritedWidget {
+class SlidableLineChartTheme<E extends Enum> extends InheritedWidget {
   const SlidableLineChartTheme({
     Key? key,
     required this.data,
@@ -283,21 +283,23 @@ class SlidableLineChartTheme<Enum> extends InheritedWidget {
           child: child,
         );
 
-  final SlidableLineChartThemeData<Enum> data;
+  final SlidableLineChartThemeData<E> data;
 
-  static SlidableLineChartThemeData<Enum> of<Enum>(BuildContext context) {
+  static SlidableLineChartThemeData<E> of<E extends Enum>(
+      BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<Enum>>()!
+        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()!
         .data;
   }
 
-  static SlidableLineChartThemeData<Enum>? maybeOf<Enum>(BuildContext context) {
+  static SlidableLineChartThemeData<E>? maybeOf<E extends Enum>(
+      BuildContext context) {
     return context
-        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<Enum>>()
+        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()
         ?.data;
   }
 
   @override
-  bool updateShouldNotify(covariant SlidableLineChartTheme<Enum> oldWidget) =>
+  bool updateShouldNotify(covariant SlidableLineChartTheme<E> oldWidget) =>
       data != oldWidget.data;
 }

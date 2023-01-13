@@ -4,7 +4,7 @@ part 'coordinate.dart';
 part 'coordinates.dart';
 
 @immutable
-class CoordinatesOptions<Enum> {
+class CoordinatesOptions<E extends Enum> {
   const CoordinatesOptions(
     this.type, {
     required this.values,
@@ -13,7 +13,7 @@ class CoordinatesOptions<Enum> {
   });
 
   /// Type of coordinates options.
-  final Enum type;
+  final E type;
 
   /// The value displayed in the coordinate system for each coordinate point.
   final List<double> values;
@@ -30,7 +30,7 @@ class CoordinatesOptions<Enum> {
 
   @override
   bool operator ==(Object other) {
-    if (other is CoordinatesOptions<Enum>) {
+    if (other is CoordinatesOptions<E>) {
       if (values.length != other.values.length) {
         return false;
       }
