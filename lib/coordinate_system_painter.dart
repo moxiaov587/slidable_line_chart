@@ -14,23 +14,23 @@ typedef GetYAxisTickLineHeight = double Function(double chartActualHeight);
 
 class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
   CoordinateSystemPainter({
-    required this.slidableCoordinatesAnimationController,
-    required this.otherCoordinatesAnimationController,
     required this.slidableCoordinateType,
-    required this.coordinatesMap,
     required this.xAxis,
-    required this.yAxis,
+    required this.coordinateSystemOrigin,
     required this.min,
     required this.max,
-    required this.maxOffsetValueOnYAxisSlidingArea,
-    required this.coordinateSystemOrigin,
     required this.divisions,
     required this.reversed,
     required this.onlyRenderEvenAxisLabel,
-    required this.slidableLineChartThemeData,
     required this.onDrawCheckOrClose,
+    required this.yAxis,
+    required this.slidableCoordinatesAnimationController,
+    required this.otherCoordinatesAnimationController,
     required this.getXAxisTickLineWidth,
+    required this.coordinatesMap,
     required this.getYAxisTickLineHeight,
+    required this.maxOffsetValueOnYAxisSlidingArea,
+    required this.slidableLineChartThemeData,
   }) : super(
           repaint: Listenable.merge(
             <AnimationController?>[
@@ -40,34 +40,20 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           ),
         );
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
-  final AnimationController? slidableCoordinatesAnimationController;
-
-  /// {@macro slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
-  final AnimationController? otherCoordinatesAnimationController;
-
   /// {@macro slidable_line_chart.SlidableLineChart.slidableCoordinateType}
   final E? slidableCoordinateType;
-
-  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
-  final Map<E, Coordinates<E>> coordinatesMap;
 
   /// {@macro slidable_line_chart.SlidableLineChart.xAxis}
   final List<String> xAxis;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
-  final List<int> yAxis;
+  /// {@macro slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
+  final Offset coordinateSystemOrigin;
 
   /// {@macro slidable_line_chart.SlidableLineChart.min}
   final int min;
 
   /// {@macro slidable_line_chart.SlidableLineChart.max}
   final int max;
-
-  final double maxOffsetValueOnYAxisSlidingArea;
-
-  /// {@macro slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
-  final Offset coordinateSystemOrigin;
 
   /// {@macro slidable_line_chart.SlidableLineChart.divisions}
   final int divisions;
@@ -78,16 +64,30 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
   /// {@macro slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
   final bool onlyRenderEvenAxisLabel;
 
-  final SlidableLineChartThemeData<E>? slidableLineChartThemeData;
-
   /// {@macro slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
   final OnDrawIndicator? onDrawCheckOrClose;
+
+  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
+  final List<int> yAxis;
+
+  /// {@macro slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
+  final AnimationController? slidableCoordinatesAnimationController;
+
+  /// {@macro slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
+  final AnimationController? otherCoordinatesAnimationController;
 
   /// {@macro slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
   final GetXAxisTickLineWidth getXAxisTickLineWidth;
 
+  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
+  final Map<E, Coordinates<E>> coordinatesMap;
+
   /// {@macro slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
   final GetYAxisTickLineHeight getYAxisTickLineHeight;
+
+  final double maxOffsetValueOnYAxisSlidingArea;
+
+  final SlidableLineChartThemeData<E>? slidableLineChartThemeData;
 
   final TextPainter _textPainter =
       TextPainter(textDirection: TextDirection.ltr);
@@ -252,18 +252,17 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     required Color lineColor,
     required Color fillAreaColor,
   }) {
-    final Offset firstCoordinateOffset = coordinates.value.first.offset;
+    final List<Coordinate> values = coordinates.value;
+
+    final Offset first = values.first.offset;
 
     final double smooth = slidableLineChartThemeData?.smooth ?? kSmooth;
 
     late final Path linePath;
 
-    final List<Coordinate> values = coordinates.value;
-
     // By https://github.com/apache/echarts/blob/master/src/chart/line/poly.ts
     if (values.length > 2 && smooth > 0.0) {
       // Is first coordinate
-      final Offset first = values.first.offset;
       linePath = Path()..moveTo(first.dx, first.dy);
       Offset controlPoint0 = Offset(first.dx, first.dy);
       Offset prev = Offset(first.dx, first.dy);
@@ -353,7 +352,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           last.dx, last.dy);
     } else {
       linePath = values.skip(1).fold<Path>(
-            Path()..moveTo(firstCoordinateOffset.dx, firstCoordinateOffset.dy),
+            Path()..moveTo(first.dx, first.dy),
             (Path path, Coordinate coordinate) =>
                 path..lineTo(coordinate.offset.dx, coordinate.offset.dy),
           );
@@ -372,10 +371,10 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);
 
       final Path fillAreaPath = Path()
-        ..moveTo(firstCoordinateOffset.dx, _chartActualHeight)
+        ..moveTo(first.dx, _chartActualHeight)
         ..addPath(path, Offset.zero)
         ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
-        ..lineTo(firstCoordinateOffset.dx, _chartActualHeight)
+        ..lineTo(first.dx, _chartActualHeight)
         ..close();
 
       canvas.drawPath(
@@ -390,9 +389,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             ],
           ).createShader(
             Rect.fromLTWH(
-              firstCoordinateOffset.dx,
+              first.dx,
               _chartActualHeight - maxOffsetValueOnYAxisSlidingArea,
-              coordinates.value.last.offset.dx - firstCoordinateOffset.dx,
+              coordinates.value.last.offset.dx - first.dx,
               maxOffsetValueOnYAxisSlidingArea,
             ),
           ),
