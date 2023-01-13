@@ -207,7 +207,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             canvas,
             tapAreaPaint
               ..color = slidableCoordinatesStyle?.tapAreaColor ??
-                  finalSlidableCoordinatePointColor.withOpacity(.2),
+                  finalSlidableCoordinatePointColor.withOpacity(
+                      0.2 * finalSlidableCoordinatePointColor.opacity),
           );
         }
 
@@ -384,7 +385,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: <Color>[
-              fillAreaColor.withOpacity(0.2),
+              fillAreaColor.withOpacity(0.2 * fillAreaColor.opacity),
               fillAreaColor,
             ],
           ).createShader(
