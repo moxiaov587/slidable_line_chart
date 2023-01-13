@@ -168,8 +168,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         animationController: otherCoordinatesAnimationController,
         coordinates: coordinates,
         lineColor: coordinatesStyle?.lineColor ?? finalCoordinatePointColor,
-        fillAreaColor:
-            coordinatesStyle?.fillAreaColor ?? finalCoordinatePointColor,
+        fillAreaColor: coordinatesStyle?.fillAreaColor ??
+            finalCoordinatePointColor
+                .withOpacity(0.5 * finalCoordinatePointColor.opacity),
       );
 
       for (final Coordinate coordinate in coordinates.value) {
@@ -198,7 +199,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         lineColor: slidableCoordinatesStyle?.lineColor ??
             finalSlidableCoordinatePointColor,
         fillAreaColor: slidableCoordinatesStyle?.fillAreaColor ??
-            finalSlidableCoordinatePointColor,
+            finalSlidableCoordinatePointColor
+                .withOpacity(0.5 * finalSlidableCoordinatePointColor.opacity),
       );
 
       for (final Coordinate coordinate in slidableCoordinates.value) {
