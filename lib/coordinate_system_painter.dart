@@ -6,13 +6,19 @@ import 'package:flutter/material.dart';
 import 'model/coordinates_options.dart';
 import 'theme/slidable_line_chart_theme.dart';
 
+/// [Coordinate] uses this callback to paint the value indicator on the overlay.
 typedef OnDrawIndicator = bool Function(double value);
 
+/// [CoordinateSystemPainter] uses this callback to get X-axis tick line width.
 typedef GetXAxisTickLineWidth = double Function(double chartActualWidth);
 
+/// [CoordinateSystemPainter] uses this callback to get Y-axis tick line width.
 typedef GetYAxisTickLineHeight = double Function(double chartActualHeight);
 
+/// [CoordinateSystemPainter] combines all the information to draw a line graph
+/// on the canvas.
 class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
+  /// Creates a coordinate system painter.
   CoordinateSystemPainter({
     required this.slidableCoordinateType,
     required this.xAxis,
@@ -24,8 +30,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     required this.onlyRenderEvenAxisLabel,
     required this.onDrawCheckOrClose,
     required this.yAxis,
-    required this.slidableCoordinatesAnimationController,
-    required this.otherCoordinatesAnimationController,
+    required this.slidableCoordsAnimationCtrl,
+    required this.otherCoordsAnimationCtrl,
     required this.getXAxisTickLineWidth,
     required this.coordinatesMap,
     required this.getYAxisTickLineHeight,
@@ -34,83 +40,85 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
   }) : super(
           repaint: Listenable.merge(
             <AnimationController?>[
-              slidableCoordinatesAnimationController,
-              otherCoordinatesAnimationController,
+              slidableCoordsAnimationCtrl,
+              otherCoordsAnimationCtrl,
             ],
           ),
         );
 
-  /// {@macro slidable_line_chart.SlidableLineChart.slidableCoordinateType}
+  /// {@macro package.SlidableLineChart.slidableCoordinateType}
   final E? slidableCoordinateType;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.xAxis}
+  /// {@macro package.SlidableLineChart.xAxis}
   final List<String> xAxis;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
+  /// {@macro package.SlidableLineChart.coordinateSystemOrigin}
   final Offset coordinateSystemOrigin;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.min}
+  /// {@macro package.SlidableLineChart.min}
   final int min;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.max}
+  /// {@macro package.SlidableLineChart.max}
   final int max;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.divisions}
+  /// {@macro package.SlidableLineChart.divisions}
   final int divisions;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.reversed}
+  /// {@macro package.SlidableLineChart.reversed}
   final bool reversed;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
+  /// {@macro package.SlidableLineChart.onlyRenderEvenAxisLabel}
   final bool onlyRenderEvenAxisLabel;
 
-  /// {@macro slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
+  /// {@macro package.SlidableLineChart.onDrawCheckOrClose}
   final OnDrawIndicator? onDrawCheckOrClose;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
+  /// {@macro package.SlidableLineChartState._yAxis}
   final List<int> yAxis;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
-  final AnimationController? slidableCoordinatesAnimationController;
+  /// {@macro package.SlidableLineChartState._slidableCoordsAnimationCtrl}
+  final AnimationController? slidableCoordsAnimationCtrl;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
-  final AnimationController? otherCoordinatesAnimationController;
+  /// {@macro package.SlidableLineChartState._otherCoordsAnimationCtrl}
+  final AnimationController? otherCoordsAnimationCtrl;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
+  /// {@macro package.SlidableLineChartState._getXAxisTickLineWidth}
   final GetXAxisTickLineWidth getXAxisTickLineWidth;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
+  /// {@macro package.SlidableLineChartState._coordinatesMap}
   final Map<E, Coordinates<E>> coordinatesMap;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
+  /// {@macro package.SlidableLineChartState._getYAxisTickLineHeight}
   final GetYAxisTickLineHeight getYAxisTickLineHeight;
 
+  /// Maximum offset on the Y-axis sliding area.
   final double maxOffsetValueOnYAxisSlidingArea;
 
+  /// {@macro package.SlidableLineChartThemeData}
   final SlidableLineChartThemeData<E>? slidableLineChartThemeData;
 
   final TextPainter _textPainter =
       TextPainter(textDirection: TextDirection.ltr);
 
-  late final Paint axisLinePaint = Paint()
+  late final Paint _axisLinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..color = slidableLineChartThemeData?.axisLineColor ?? kAxisLineColor
     ..strokeWidth = slidableLineChartThemeData?.axisLineWidth ?? kAxisLineWidth;
 
-  late final Paint gridLinePaint = Paint()
+  late final Paint _gridLinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..color = slidableLineChartThemeData?.gridLineColor ?? kGridLineColor
     ..strokeWidth = slidableLineChartThemeData?.gridLineWidth ?? kGridLineWidth;
 
-  final Paint coordinatePointPaint = Paint();
+  final Paint _coordinatePointPaint = Paint();
 
-  late final Paint linePaint = Paint()
+  late final Paint _linePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = slidableLineChartThemeData?.lineWidth ?? kLineWidth;
 
-  final Paint fillAreaPaint = Paint();
+  final Paint _fillAreaPaint = Paint();
 
-  final Paint tapAreaPaint = Paint();
+  final Paint _tapAreaPaint = Paint();
 
   late double _chartWidth;
   late double _chartHeight;
@@ -133,25 +141,25 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       // Y-Axis
       ..moveTo(coordinateSystemOrigin.dx, 0.0)
       ..relativeLineTo(0.0, _chartHeight);
-    canvas.drawPath(axisLinePath, axisLinePaint);
+    canvas.drawPath(axisLinePath, _axisLinePaint);
 
     final double xAxisTickLineWidth = getXAxisTickLineWidth(_chartActualWidth);
 
-    drawXAxis(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
-    drawYAxis(canvas);
+    _drawXAxis(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
+    _drawYAxis(canvas);
 
-    drawCoordinates(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
+    _drawCoordinates(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
   }
 
-  void drawCoordinates(
+  void _drawCoordinates(
     Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
     final Map<E, CoordinatesStyle<E>>? coordinatesStyleMap =
         slidableLineChartThemeData?.coordinatesStyleMap;
 
-    // Draw other coordinates first so that the slidable coordinates are drawn at
-    // the top level.
+    // Draw other coordinates first so that the slidable coordinates are drawn
+    // at the top level.
     for (final Coordinates<E> coordinates in coordinatesMap.values) {
       if (coordinates.type == slidableCoordinateType) {
         continue; // Skip slidable coordinates.
@@ -163,9 +171,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final Color finalCoordinatePointColor = coordinatesStyle?.pointColor ??
           kColorPalette[coordinates.type.index % kColorPalette.length];
 
-      drawLineAndFillArea(
+      _drawLineAndFillArea(
         canvas,
-        animationController: otherCoordinatesAnimationController,
+        animationController: otherCoordsAnimationCtrl,
         coordinates: coordinates,
         lineColor: coordinatesStyle?.lineColor ?? finalCoordinatePointColor,
         fillAreaColor: coordinatesStyle?.fillAreaColor ??
@@ -174,9 +182,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       );
 
       for (final Coordinate coordinate in coordinates.value) {
-        coordinate.drawCoordinatePoint(
-          canvas,
-          coordinatePointPaint..color = finalCoordinatePointColor,
+        canvas.drawOval(
+          coordinate.rect,
+          _coordinatePointPaint..color = finalCoordinatePointColor,
         );
       }
     }
@@ -192,9 +200,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
               ?.pointColor ??
           kColorPalette[slidableCoordinateType!.index % kColorPalette.length];
 
-      drawLineAndFillArea(
+      _drawLineAndFillArea(
         canvas,
-        animationController: slidableCoordinatesAnimationController,
+        animationController: slidableCoordsAnimationCtrl,
         coordinates: slidableCoordinates,
         lineColor: slidableCoordinatesStyle?.lineColor ??
             finalSlidableCoordinatePointColor,
@@ -205,18 +213,19 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
       for (final Coordinate coordinate in slidableCoordinates.value) {
         if (slidableLineChartThemeData?.showTapArea ?? kShowTapArea) {
-          coordinate.drawTapArea(
-            canvas,
-            tapAreaPaint
+          canvas.drawOval(
+            coordinate.zoomedRect,
+            _tapAreaPaint
               ..color = slidableCoordinatesStyle?.tapAreaColor ??
                   finalSlidableCoordinatePointColor.withOpacity(
-                      0.2 * finalSlidableCoordinatePointColor.opacity),
+                    0.2 * finalSlidableCoordinatePointColor.opacity,
+                  ),
           );
         }
 
-        coordinate.drawCoordinatePoint(
-          canvas,
-          coordinatePointPaint..color = finalSlidableCoordinatePointColor,
+        canvas.drawOval(
+          coordinate.rect,
+          _coordinatePointPaint..color = finalSlidableCoordinatePointColor,
         );
 
         _drawDisplayValueText(
@@ -248,7 +257,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     }
   }
 
-  void drawLineAndFillArea(
+  void _drawLineAndFillArea(
     Canvas canvas, {
     required AnimationController? animationController,
     required Coordinates<E> coordinates,
@@ -285,8 +294,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         final Offset d0 = Offset(current.dx - prev.dx, current.dy - prev.dy);
         final Offset d1 = Offset(next.dx - current.dx, next.dy - current.dy);
 
-        final double lenPrevSeg = math.sqrt(d0.dx * d0.dx + d0.dy * d0.dy);
-        final double lenNextSeg = math.sqrt(d1.dx * d1.dx + d1.dy * d1.dy);
+        final double lenPrevSeg = d0.distance;
+        final double lenNextSeg = d1.distance;
 
         // Use ratio of segment length.
         ratio = lenNextSeg / (lenNextSeg + lenPrevSeg);
@@ -305,31 +314,39 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         // Smooth constraint between point and next point.
         // Avoid exceeding extreme after smoothing.
         nextControlPoint0 = Offset(
-          math.min(nextControlPoint0.dx, math.max(next.dx, current.dx)),
-          math.min(nextControlPoint0.dy, math.max(next.dy, current.dy)),
-        );
-        nextControlPoint0 = Offset(
-          math.max(nextControlPoint0.dx, math.min(next.dx, current.dx)),
-          math.max(nextControlPoint0.dy, math.min(next.dy, current.dy)),
+          nextControlPoint0.dx.clamp(
+            math.min(next.dx, current.dx),
+            math.max(next.dx, current.dx),
+          ),
+          nextControlPoint0.dy.clamp(
+            math.min(next.dy, current.dy),
+            math.max(next.dy, current.dy),
+          ),
         );
 
         // Recalculate controlPoint1 based on the adjusted controlPoint0 of next
         // segment.
-        vector = Offset(nextControlPoint0.dx - current.dx,
-            nextControlPoint0.dy - current.dy);
+        vector = Offset(
+          nextControlPoint0.dx - current.dx,
+          nextControlPoint0.dy - current.dy,
+        );
 
-        controlPoint1 = Offset(current.dx - vector.dx * lenPrevSeg / lenNextSeg,
-            current.dy - vector.dy * lenPrevSeg / lenNextSeg);
+        controlPoint1 = Offset(
+          current.dx - vector.dx * lenPrevSeg / lenNextSeg,
+          current.dy - vector.dy * lenPrevSeg / lenNextSeg,
+        );
 
         // Smooth constraint between point and pre point.
         // Avoid exceeding extreme after smoothing.
         controlPoint1 = Offset(
-          math.min(controlPoint1.dx, math.max(prev.dx, current.dx)),
-          math.min(controlPoint1.dy, math.max(prev.dy, current.dy)),
-        );
-        controlPoint1 = Offset(
-          math.max(controlPoint1.dx, math.min(prev.dx, current.dx)),
-          math.max(controlPoint1.dy, math.min(prev.dy, current.dy)),
+          controlPoint1.dx.clamp(
+            math.min(prev.dx, current.dx),
+            math.max(prev.dx, current.dx),
+          ),
+          controlPoint1.dy.clamp(
+            math.min(prev.dy, current.dy),
+            math.max(prev.dy, current.dy),
+          ),
         );
 
         // Adjust nextControlPoint0 again.
@@ -342,8 +359,14 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           current.dy + vector.dy * lenNextSeg / lenPrevSeg,
         );
 
-        linePath.cubicTo(controlPoint0.dx, controlPoint0.dy, controlPoint1.dx,
-            controlPoint1.dy, current.dx, current.dy);
+        linePath.cubicTo(
+          controlPoint0.dx,
+          controlPoint0.dy,
+          controlPoint1.dx,
+          controlPoint1.dy,
+          current.dx,
+          current.dy,
+        );
 
         controlPoint0 = Offset(nextControlPoint0.dx, nextControlPoint0.dy);
         prev = Offset(current.dx, current.dy);
@@ -351,8 +374,14 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
       // Is last coordinate
       final Offset last = values.last.offset;
-      linePath.cubicTo(controlPoint0.dx, controlPoint0.dy, last.dx, last.dy,
-          last.dx, last.dy);
+      linePath.cubicTo(
+        controlPoint0.dx,
+        controlPoint0.dy,
+        last.dx,
+        last.dy,
+        last.dx,
+        last.dy,
+      );
     } else {
       linePath = values.skip(1).fold<Path>(
             Path()..moveTo(first.dx, first.dy),
@@ -369,7 +398,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
       final Path path = pathMetric.extractPath(0.0, progress);
 
-      canvas.drawPath(path, linePaint..color = lineColor);
+      canvas.drawPath(path, _linePaint..color = lineColor);
 
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);
 
@@ -382,7 +411,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
       canvas.drawPath(
         fillAreaPath,
-        fillAreaPaint
+        _fillAreaPaint
           ..shader = LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
@@ -402,16 +431,16 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     }
   }
 
-  void drawXAxis(
+  void _drawXAxis(
     Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
-    canvas.save();
-
-    canvas.translate(
-      xAxisTickLineWidth / 2 + coordinateSystemOrigin.dx,
-      _chartHeight,
-    );
+    canvas
+      ..save()
+      ..translate(
+        xAxisTickLineWidth / 2 + coordinateSystemOrigin.dx,
+        _chartHeight,
+      );
 
     for (int i = 0; i < xAxis.length; i++) {
       _drawAxisLabel(
@@ -427,7 +456,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     canvas.restore();
   }
 
-  void drawYAxis(Canvas canvas) {
+  void _drawYAxis(Canvas canvas) {
     canvas.save();
 
     final double yAxisTickLineHeight =
@@ -451,7 +480,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       canvas.drawLine(
         Offset.zero,
         Offset(_chartActualWidth, 0),
-        gridLinePaint,
+        _gridLinePaint,
       );
 
       if (!onlyRenderEvenAxisLabel || (onlyRenderEvenAxisLabel && i.isEven)) {
@@ -477,8 +506,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       style: slidableLineChartThemeData?.axisLabelStyle ?? kAxisLabelStyle,
     );
 
-    _textPainter.text = textSpan;
-    _textPainter.layout();
+    _textPainter
+      ..text = textSpan
+      ..layout();
 
     final Size size = _textPainter.size;
 
@@ -511,8 +541,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           kDisplayValueTextStyle,
     );
 
-    _textPainter.text = textSpan;
-    _textPainter.layout();
+    _textPainter
+      ..text = textSpan
+      ..layout();
 
     final Size size = _textPainter.size;
 
@@ -535,7 +566,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         <Offset>[
           Offset(x - radius, y),
           Offset(x - radius / 3, y + (radius - radius / 3)),
-          Offset(x + radius, y - radius * 2 / 3)
+          Offset(x + radius, y - radius * 2 / 3),
         ],
         false,
       );
@@ -545,15 +576,15 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           kCheckBackgroundColor
       ..style = PaintingStyle.fill;
 
-    canvas.drawCircle(Offset(x, y), radius * 2, paint);
-
-    canvas.drawPath(
-      checkPath,
-      paint
-        ..color = slidableLineChartThemeData?.checkColor ?? kCheckColor
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = radius * 0.4,
-    );
+    canvas
+      ..drawCircle(Offset(x, y), radius * 2, paint)
+      ..drawPath(
+        checkPath,
+        paint
+          ..color = slidableLineChartThemeData?.checkColor ?? kCheckColor
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = radius * 0.4,
+      );
   }
 
   void _drawClose(
@@ -576,17 +607,17 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = radius * 0.4;
 
-    canvas.drawLine(
-      Offset(x - size, y - size),
-      Offset(x + size, y + size),
-      paint,
-    );
-
-    canvas.drawLine(
-      Offset(x + size, y - size),
-      Offset(x - size, y + size),
-      paint,
-    );
+    canvas
+      ..drawLine(
+        Offset(x - size, y - size),
+        Offset(x + size, y + size),
+        paint,
+      )
+      ..drawLine(
+        Offset(x + size, y - size),
+        Offset(x - size, y + size),
+        paint,
+      );
   }
 
   @override

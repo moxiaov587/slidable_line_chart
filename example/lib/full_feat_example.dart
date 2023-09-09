@@ -115,11 +115,17 @@ class _FullFeatExampleState extends State<FullFeatExample> {
       themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
       theme: ThemeData.light().copyWith(
         primaryColor: const Color(0xff36cfc9),
-        errorColor: const Color(0xfff759ab),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff36cfc9),
+          error: const Color(0xfff759ab),
+        ),
       ),
       darkTheme: ThemeData.dark().copyWith(
         primaryColor: const Color(0xff1765ad),
-        errorColor: const Color(0xffa61d24),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xff1765ad),
+          error: const Color(0xffa61d24),
+        ),
       ),
       home: Scaffold(
         appBar: AppBar(
@@ -148,10 +154,12 @@ class _FullFeatExampleState extends State<FullFeatExample> {
                         ),
                         CoordinatesStyle<_CoordinateType>(
                           type: _CoordinateType.right,
-                          pointColor: Theme.of(context).errorColor,
-                          lineColor: Theme.of(context).errorColor,
-                          fillAreaColor:
-                              Theme.of(context).errorColor.withOpacity(.5),
+                          pointColor: Theme.of(context).colorScheme.error,
+                          lineColor: Theme.of(context).colorScheme.error,
+                          fillAreaColor: Theme.of(context)
+                              .colorScheme
+                              .error
+                              .withOpacity(.5),
                         ),
                       ],
                       showTapArea: true,

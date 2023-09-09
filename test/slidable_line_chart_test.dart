@@ -37,7 +37,7 @@ void main() {
           CoordinateType.left,
           values: <double>[
             min.toDouble(),
-            ...List<double>.generate(xAxis.length - 1, (_) => max.toDouble())
+            ...List<double>.generate(xAxis.length - 1, (_) => max.toDouble()),
           ],
         ),
       ];
@@ -45,61 +45,59 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return SafeArea(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(
-                      width: width,
-                      height: height,
-                      child: SlidableLineChart<CoordinateType>(
-                        key: key,
-                        slidableCoordinateType: CoordinateType.left,
-                        coordinatesOptionsList: options,
-                        xAxis: xAxis,
-                        min: min,
-                        max: max,
-                        slidePrecision: slidePrecisionList[slidePrecisionIndex],
-                        divisions: divisions,
-                        reversed: reversed,
-                        onChange:
-                            (List<CoordinatesOptions<CoordinateType>> values) {
-                          setState(() => options = values);
-                        },
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        key.currentState!.resetAnimationController();
-
-                        setState(() => reversed = !reversed);
+            builder: (BuildContext context, StateSetter setState) => SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    width: width,
+                    height: height,
+                    child: SlidableLineChart<CoordinateType>(
+                      key: key,
+                      slidableCoordinateType: CoordinateType.left,
+                      coordinatesOptionsList: options,
+                      xAxis: xAxis,
+                      min: min,
+                      max: max,
+                      slidePrecision: slidePrecisionList[slidePrecisionIndex],
+                      divisions: divisions,
+                      reversed: reversed,
+                      onChange:
+                          (List<CoordinatesOptions<CoordinateType>> values) {
+                        setState(() => options = values);
                       },
-                      child: Text(
-                        'Reversed',
-                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                              color: Colors.white,
-                            ),
-                      ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        int data = slidePrecisionIndex + 1;
-                        data = data == slidePrecisionList.length ? 0 : data;
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      key.currentState!.resetAnimationController();
 
-                        setState(() => slidePrecisionIndex = data);
-                      },
-                      child: Text(
-                        'Toggle Slide Precision',
-                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                              color: Colors.white,
-                            ),
-                      ),
+                      setState(() => reversed = !reversed);
+                    },
+                    child: Text(
+                      'Reversed',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
                     ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      int data = slidePrecisionIndex + 1;
+                      data = data == slidePrecisionList.length ? 0 : data;
+
+                      setState(() => slidePrecisionIndex = data);
+                    },
+                    child: Text(
+                      'Toggle Slide Precision',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -210,7 +208,9 @@ void main() {
 
       await gesture.down(randomCoordinateOffsetByCalculation);
       expect(
-          key.currentState!.currentSlideCoordinateIndex, equals(randomIndex));
+        key.currentState!.currentSlideCoordinateIndex,
+        equals(randomIndex),
+      );
       expect(options.single.values[randomIndex], equals(max));
 
       slidePrecision = slidePrecisionList[slidePrecisionIndex]!;
@@ -233,7 +233,8 @@ void main() {
       expect(
         options.single.values[randomIndex],
         equals(
-            double.parse((max - unitNum * slidePrecision).toStringAsFixed(1))),
+          double.parse((max - unitNum * slidePrecision).toStringAsFixed(1)),
+        ),
       );
 
       // Move up 46.
@@ -247,7 +248,8 @@ void main() {
       expect(
         options.single.values[randomIndex],
         equals(
-            double.parse((max - unitNum * slidePrecision).toStringAsFixed(1))),
+          double.parse((max - unitNum * slidePrecision).toStringAsFixed(1)),
+        ),
       );
 
       // Move up to out of bounds.
@@ -297,54 +299,52 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return SafeArea(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    SizedBox(
-                      width: width,
-                      height: height,
-                      child: SlidableLineChart<CoordinateType>(
-                        key: key,
-                        slidableCoordinateType: slidableCoordinateType,
-                        coordinatesOptionsList: options,
-                        xAxis: xAxis,
-                        min: min,
-                        max: max,
-                        onChange:
-                            (List<CoordinatesOptions<CoordinateType>> values) {
-                          setState(() => options = values);
-                        },
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        CoordinateType? type;
-                        switch (slidableCoordinateType) {
-                          case null:
-                            type = CoordinateType.left;
-                            break;
-                          case CoordinateType.left:
-                            type = CoordinateType.right;
-                            break;
-                          case CoordinateType.right:
-                            break;
-                        }
-
-                        setState(() => slidableCoordinateType = type);
+            builder: (BuildContext context, StateSetter setState) => SafeArea(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  SizedBox(
+                    width: width,
+                    height: height,
+                    child: SlidableLineChart<CoordinateType>(
+                      key: key,
+                      slidableCoordinateType: slidableCoordinateType,
+                      coordinatesOptionsList: options,
+                      xAxis: xAxis,
+                      min: min,
+                      max: max,
+                      onChange:
+                          (List<CoordinatesOptions<CoordinateType>> values) {
+                        setState(() => options = values);
                       },
-                      child: Text(
-                        'Toggle Slidable Type',
-                        style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                              color: Colors.white,
-                            ),
-                      ),
                     ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      CoordinateType? type;
+                      switch (slidableCoordinateType) {
+                        case null:
+                          type = CoordinateType.left;
+                          break;
+                        case CoordinateType.left:
+                          type = CoordinateType.right;
+                          break;
+                        case CoordinateType.right:
+                          break;
+                      }
+
+                      setState(() => slidableCoordinateType = type);
+                    },
+                    child: Text(
+                      'Toggle Slidable Type',
+                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
+                            color: Colors.white,
+                          ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       );
@@ -497,8 +497,9 @@ void main() {
 
       // After move.
       firstCoordinateOffsetByCalculation = Offset(
-          firstCoordinateOffsetByCalculation.dx,
-          maxOffsetValueOnYAxisSlidingArea);
+        firstCoordinateOffsetByCalculation.dx,
+        maxOffsetValueOnYAxisSlidingArea,
+      );
 
       firstCoordinateOffsetByMap =
           key.currentState!.coordinatesMap.values.first.value.first.offset;
@@ -576,9 +577,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: StatefulBuilder(
-            builder: (BuildContext context, StateSetter setState) {
-              return SafeArea(
-                  child: Align(
+            builder: (BuildContext context, StateSetter setState) => SafeArea(
+              child: Align(
                 alignment: Alignment.topLeft,
                 child: SizedBox(
                   width: 300.0,
@@ -586,8 +586,8 @@ void main() {
                   child: SlidableLineChart<CoordinateType>(
                     key: key,
                     slidableCoordinateType: CoordinateType.left,
-                    coordinatesOptionsList: <
-                        CoordinatesOptions<CoordinateType>>[
+                    coordinatesOptionsList: <CoordinatesOptions<
+                        CoordinateType>>[
                       CoordinatesOptions<CoordinateType>(
                         CoordinateType.left,
                         values: List<double>.generate(6, (_) => 0.0),
@@ -609,8 +609,8 @@ void main() {
                     },
                   ),
                 ),
-              ));
-            },
+              ),
+            ),
           ),
         ),
       );
