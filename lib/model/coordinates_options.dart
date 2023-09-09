@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../slidable_line_chart.dart' show SlidableLineChart;
+
 part 'coordinate.dart';
 part 'coordinates.dart';
 
+/// Define a configuration for a set of coordinate points.
 @immutable
 class CoordinatesOptions<E extends Enum> {
+  /// Create [CoordinatesOptions] to add a polyline to [SlidableLineChart].
   const CoordinatesOptions(
     this.type, {
     required this.values,

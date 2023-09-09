@@ -1,7 +1,8 @@
+/// A slidable line chart.
 library slidable_line_chart;
 
+import 'dart:async' show unawaited;
 import 'package:collection/collection.dart' show IterableExtension;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -12,10 +13,25 @@ import 'theme/slidable_line_chart_theme.dart';
 export 'model/coordinates_options.dart' show CoordinatesOptions;
 export 'theme/slidable_line_chart_theme.dart';
 
-typedef CoordinatesOptionsChanged<E extends Enum> = void Function(
-    List<CoordinatesOptions<E>> options);
-
+/// A slidable line chart.
 class SlidableLineChart<E extends Enum> extends StatefulWidget {
+  /// Creates a slidable line chart.
+  ///
+  /// The chart itself does not maintain any state. Instead, when the state of
+  /// the chart changes, the widget calls the [onChange] callback. Most
+  /// widgets that use a chart will listen for the [onChange] callback and
+  /// rebuild the chart with a new [coordinatesOptionsList] to update the
+  /// visual appearance of the chart.
+  ///
+  /// * [coordinatesOptionsList] defines all the lines displayed by this chart.
+  /// * [onChange] is called while the user is selecting a new value for the
+  ///   chart.
+  /// * [onChangeStart] is called when the user starts to select a new value for
+  ///   the chart.
+  /// * [onChangeEnd] is called when the user is done selecting a new value for
+  ///   the chart.
+  ///
+  /// Use [SlidableLineChartThemeData] to customize the appearance.
   const SlidableLineChart({
     Key? key,
     this.slidableCoordinateType,
@@ -35,13 +51,18 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
     this.onChangeStart,
     this.onChangeEnd,
   })  : assert(max > min, 'max($max) must be larger than min($min)'),
-        assert(divisions > 0 && divisions <= max - min,
-            'divisions($divisions) must be larger than 0 and less than max($max) - min($min)'),
-        assert(slidePrecision == null || (slidePrecision * 100) % 1 == 0,
-            'slidePrecision($slidePrecision) must be a multiple of 0.01'),
+        assert(
+          divisions > 0 && divisions <= max - min,
+          'divisions($divisions) must be larger than 0 and '
+          'less than max($max) - min($min)',
+        ),
+        assert(
+          slidePrecision == null || (slidePrecision * 100) % 1 == 0,
+          'slidePrecision($slidePrecision) must be a multiple of 0.01',
+        ),
         super(key: key);
 
-  /// {@template slidable_line_chart.SlidableLineChart.slidableCoordinateType}
+  /// {@template package.SlidableLineChart.slidableCoordinateType}
   /// The type of coordinates the user can slide.
   ///
   /// Defaults to null.
@@ -54,19 +75,19 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// [SlidableLineChartState._coordinatesMap].
   final List<CoordinatesOptions<E>> coordinatesOptionsList;
 
-  /// {@template slidable_line_chart.SlidableLineChart.xAxis}
+  /// {@template package.SlidableLineChart.xAxis}
   /// Labels displayed on the x-axis.
   /// {@endtemplate}
   final List<String> xAxis;
 
-  /// {@template slidable_line_chart.SlidableLineChart.coordinateSystemOrigin}
+  /// {@template package.SlidableLineChart.coordinateSystemOrigin}
   /// Coordinate system origin offset value.
   ///
   /// Defaults to Offset(6.0, 6.0).
   /// {@endtemplate}
   final Offset coordinateSystemOrigin;
 
-  /// {@template slidable_line_chart.SlidableLineChart.min}
+  /// {@template package.SlidableLineChart.min}
   /// The minimum value that the user can slide to.
   ///
   /// Must be less than or equal to [max].
@@ -76,27 +97,32 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// This value is also the start value for the Y-axis.
   ///
-  /// Y-axis generate is also affected by [reversed] and [onlyRenderEvenAxisLabel],
+  /// Y-axis generate is also affected by [reversed] and
+  /// [onlyRenderEvenAxisLabel],
+  ///
   /// See [SlidableLineChartState._generateYAxis].
   /// {@endtemplate}
   final int min;
 
-  /// {@template slidable_line_chart.SlidableLineChart.max}
+  /// {@template package.SlidableLineChart.max}
   /// The maximum value that the user can slide to.
   ///
   /// Must be greater than or equal to [min].
   ///
-  /// Generate [SlidableLineChartState._yAxis] from this value and
-  /// [min], [divisions].
+  /// Generate [SlidableLineChartState._yAxis] from this value and [min],
+  /// [divisions].
   ///
-  /// This value is not necessarily the maximum value actually display on the Y-axis.
+  /// This value is not necessarily the maximum value actually display on the
+  /// Y-axis.
   ///
-  /// Y-axis generation is also affected by [reversed] and [onlyRenderEvenAxisLabel],
+  /// Y-axis generation is also affected by [reversed] and
+  /// [onlyRenderEvenAxisLabel],
+  ///
   /// See [SlidableLineChartState._generateYAxis].
   /// {@endtemplate}
   final int max;
 
-  /// {@template slidable_line_chart.SlidableLineChart.divisions}
+  /// {@template package.SlidableLineChart.divisions}
   /// The division value of y-axis.
   ///
   /// Defaults to 1. Must be less than or equal to 0.
@@ -106,7 +132,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// {@endtemplate}
   final int divisions;
 
-  /// {@template slidable_line_chart.SlidableLineChart.slidePrecision}
+  /// {@template package.SlidableLineChart.slidePrecision}
   /// The minimum value for each slide by the user.
   ///
   /// Must be a multiple of 0.01.
@@ -115,7 +141,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// {@endtemplate}
   final double? slidePrecision;
 
-  /// {@template slidable_line_chart.SlidableLineChart.reversed}
+  /// {@template package.SlidableLineChart.reversed}
   /// Whether the coordinate system is reversed.
   ///
   /// Defaults to false.
@@ -125,7 +151,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// {@endtemplate}
   final bool reversed;
 
-  /// {@template slidable_line_chart.SlidableLineChart.onlyRenderEvenAxisLabel}
+  /// {@template package.SlidableLineChart.onlyRenderEvenAxisLabel}
   /// Whether the y-axis label renders only even items.
   ///
   /// Defaults to true.
@@ -145,7 +171,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// Defaults to Duration(seconds: 1).
   final Duration initializationAnimationDuration;
 
-  /// {@template slidable_line_chart.SlidableLineChart.onDrawCheckOrClose}
+  /// {@template package.SlidableLineChart.onDrawCheckOrClose}
   /// Called when the user slides coordinate, the return value determines the
   /// indicator type.
   ///
@@ -154,14 +180,15 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// Defaults to null, nothing.
   ///
-  /// See [CoordinateSystemPainter.drawCoordinates].
+  /// See [CoordinateSystemPainter._drawCoordinates].
   /// {@endtemplate}
   final OnDrawIndicator? onDrawCheckOrClose;
 
   /// Called when the user slides coordinate.
   ///
   /// The coordinate passes the new value to the callback but does not actually
-  /// change state until the parent widget rebuilds the chart with the new value.
+  /// change state until the parent widget rebuilds the chart with the new
+  /// value.
   ///
   /// If null, the chart will be displayed as disabled.
   ///
@@ -171,7 +198,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///    sliding the coordinate.
   /// * [onChangeEnd] for a callback that is called when the user stops
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<E>? onChange;
+  final ValueChanged<List<CoordinatesOptions<E>>>? onChange;
 
   /// Called when the user starts sliding coordinate.
   ///
@@ -179,7 +206,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// * [onChangeEnd] for a callback that is called when the user stops
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<E>? onChangeStart;
+  final ValueChanged<List<CoordinatesOptions<E>>>? onChangeStart;
 
   /// Called when the user stops sliding coordinate.
   ///
@@ -187,35 +214,40 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// * [onChangeStart] for a callback that is called when the user starts
   ///    sliding the coordinate.
-  final CoordinatesOptionsChanged<E>? onChangeEnd;
+  final ValueChanged<List<CoordinatesOptions<E>>>? onChangeEnd;
 
   @override
   State<SlidableLineChart<E>> createState() => SlidableLineChartState<E>();
 }
 
+/// State for a [SlidableLineChart].
+///
+/// Call [SlidableLineChartState.resetAnimationController] to reset the
+/// animation.
 class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     with TickerProviderStateMixin {
-  /// {@template slidable_line_chart.SlidableLineChartState._yAxis}
+  /// {@template package.SlidableLineChartState._yAxis}
   /// Text display on Y-axis.
   ///
   /// See [_generateYAxis].
   /// {@endtemplate}
   late List<int> _yAxis;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._yAxis}
+  /// {@macro package.SlidableLineChartState._yAxis}
   List<int> get yAxis => _yAxis;
 
   /// Generate Y-axis.
   ///
-  /// When [SlidableLineChart.reversed], [SlidableLineChart.min], [SlidableLineChart.max],
-  /// [SlidableLineChart.divisions] and [SlidableLineChart.onlyRenderEvenAxisLabel]
-  /// will be regenerated when any value changes.
+  /// When [SlidableLineChart.reversed], [SlidableLineChart.min],
+  /// [SlidableLineChart.max], [SlidableLineChart.divisions] and
+  /// [SlidableLineChart.onlyRenderEvenAxisLabel] will be regenerated when any
+  /// value changes.
   ///
-  /// If [SlidableLineChart.max] is greater than the last item in the current list,
-  /// set the length to +1.
+  /// If [SlidableLineChart.max] is greater than the last item in the current
+  /// list, set the length to +1.
   ///
-  /// If [SlidableLineChart.onlyRenderEvenAxisLabel] is true, and the current list
-  /// length is even, set the length to +1.
+  /// If [SlidableLineChart.onlyRenderEvenAxisLabel] is true, and the current
+  /// list length is even, set the length to +1.
   void _generateYAxis() {
     int yAxisLength = ((widget.max - widget.min) / widget.divisions).ceil();
 
@@ -248,7 +280,8 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     }
 
     _generateMinAndMaxValuesForNumberOfLogicRowsOnYAxisSlidingArea(
-        numberOfRowsDisplayedOnYAxis);
+      numberOfRowsDisplayedOnYAxis,
+    );
   }
 
   /// Maximum Y-axis value after [_generateYAxis] processing.
@@ -259,11 +292,11 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   /// See [_generateYAxis].
   late int _yAxisMaxValue;
 
-  /// {@template slidable_line_chart.SlidableLineChartState._percentDerivedArea}
+  /// {@template package.SlidableLineChartState._percentDerivedArea}
   /// Percentage of the coordinate system outside the sliding area.
   ///
-  /// Derived area due to [SlidableLineChart.max] and [SlidableLineChart.onlyRenderEvenAxisLabel]
-  /// effects.
+  /// Derived area due to [SlidableLineChart.max] and
+  /// [SlidableLineChart.onlyRenderEvenAxisLabel] effects.
   ///
   /// Used to limit the range offset values the user can slide.
   ///
@@ -271,7 +304,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   /// {@endtemplate}
   late double _percentDerivedArea;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._percentDerivedArea}
+  /// {@macro package.SlidableLineChartState._percentDerivedArea}
   double get percentDerivedArea => _percentDerivedArea;
 
   /// The number of rows the derived region occupies on the Y-axis.
@@ -324,7 +357,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     }
   }
 
-  /// {@macro slidable_line_chart.SlidableLineChart.slidePrecision}
+  /// {@macro package.SlidableLineChart.slidePrecision}
   num get slidePrecision => widget.slidePrecision ?? widget.divisions;
 
   /// Slidable coordinates.
@@ -333,7 +366,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   Coordinates<E>? get _slidableCoordinates =>
       _coordinatesMap[widget.slidableCoordinateType];
 
-  /// {@template slidable_line_chart.SlidableLineChartState._slidableCoordinatesAnimationController}
+  /// {@template package.SlidableLineChartState._slidableCoordsAnimationCtrl}
   /// Animation controller with slidable line chart.
   ///
   /// Animation reset for controlling slidable line charts and other line charts
@@ -341,9 +374,9 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   ///
   /// See [resetAnimationController].
   /// {@endtemplate}
-  AnimationController? _slidableCoordinatesAnimationController;
+  AnimationController? _slidableCoordsAnimationCtrl;
 
-  /// {@template slidable_line_chart.SlidableLineChartState._otherCoordinatesAnimationController}
+  /// {@template package.SlidableLineChartState._otherCoordsAnimationCtrl}
   /// Animation controller with other line chart.
   ///
   /// Animation reset for controlling slidable line charts and other line charts
@@ -351,15 +384,15 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   ///
   /// See [resetAnimationController].
   /// {@endtemplate}
-  AnimationController? _otherCoordinatesAnimationController;
+  AnimationController? _otherCoordsAnimationCtrl;
 
   void _initializationAnimationController() {
-    _slidableCoordinatesAnimationController = AnimationController(
+    _slidableCoordsAnimationCtrl = AnimationController(
       vsync: this,
       duration: widget.initializationAnimationDuration,
     );
 
-    _otherCoordinatesAnimationController = AnimationController(
+    _otherCoordsAnimationCtrl = AnimationController(
       vsync: this,
       duration: widget.initializationAnimationDuration,
     );
@@ -367,29 +400,29 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
 
   /// Reset animation controllers to initial values.
   ///
-  /// When [resetAll] is true, both [_slidableCoordinatesAnimationController] and
-  /// [_otherCoordinatesAnimationController] are reset, otherwise only
-  /// [_slidableCoordinatesAnimationController] is reset.
+  /// When [resetAll] is true, both [_slidableCoordsAnimationCtrl] and
+  /// [_otherCoordsAnimationCtrl] are reset, otherwise only
+  /// [_slidableCoordsAnimationCtrl] is reset.
   ///
   /// By default, the initialization animation is executed only once.
   ///
   /// You can use this method to trigger the animation again when reversing,
   /// switching data sources, and resetting data to initial values.
   void resetAnimationController({bool resetAll = true}) {
-    _slidableCoordinatesAnimationController?.reset();
+    _slidableCoordsAnimationCtrl?.reset();
 
     if (resetAll) {
-      _otherCoordinatesAnimationController?.reset();
+      _otherCoordsAnimationCtrl?.reset();
     }
   }
 
   void _forwardAnimationControllerWhenIsDismissed() {
-    if (_slidableCoordinatesAnimationController?.isDismissed ?? false) {
-      _slidableCoordinatesAnimationController?.forward();
+    if (_slidableCoordsAnimationCtrl?.isDismissed ?? false) {
+      _slidableCoordsAnimationCtrl?.forward();
     }
 
-    if (_otherCoordinatesAnimationController?.isDismissed ?? false) {
-      _otherCoordinatesAnimationController?.forward();
+    if (_otherCoordsAnimationCtrl?.isDismissed ?? false) {
+      _otherCoordsAnimationCtrl?.forward();
     }
   }
 
@@ -427,39 +460,41 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
       if (widget.enableInitializationAnimation) {
         _initializationAnimationController();
       } else {
-        _slidableCoordinatesAnimationController?.dispose();
-        _slidableCoordinatesAnimationController = null;
+        _slidableCoordsAnimationCtrl?.dispose();
+        _slidableCoordsAnimationCtrl = null;
 
-        _otherCoordinatesAnimationController?.dispose();
-        _otherCoordinatesAnimationController = null;
+        _otherCoordsAnimationCtrl?.dispose();
+        _otherCoordsAnimationCtrl = null;
       }
     }
   }
 
   @override
   void dispose() {
-    _slidableCoordinatesAnimationController?.dispose();
-    _otherCoordinatesAnimationController?.dispose();
+    _slidableCoordsAnimationCtrl?.dispose();
+    _otherCoordsAnimationCtrl?.dispose();
     super.dispose();
   }
 
-  /// {@template slidable_line_chart.SlidableLineChartState._getXAxisTickLineWidth}
+  /// {@template package.SlidableLineChartState._getXAxisTickLineWidth}
   /// Get X-axis tick line width from the length of [SlidableLineChart.xAxis].
   ///
-  /// Calculate by subtracting `dx` from [SlidableLineChart.coordinateSystemOrigin].
+  /// Calculate by subtracting `dx` from
+  /// [SlidableLineChart.coordinateSystemOrigin].
   ///
   /// This value divided by 2 is dx for the coordinate offset.
   /// {@endtemplate}
   double _getXAxisTickLineWidth(double chartActualWidth) =>
       chartActualWidth / widget.xAxis.length;
 
-  /// Get the conversion factor from the Y-axis display value to the offset value.
+  /// Get the conversion factor from the Y-axis display value to the offset
+  /// value.
   ///
   /// `display value * this factor = offset value`.
   double _getYAxisDisplayValue2OffsetValueFactor(double chartActualHeight) =>
       chartActualHeight / (_yAxisMaxValue - widget.min);
 
-  /// {@template slidable_line_chart.SlidableLineChartState._coordinatesMap}
+  /// {@template package.SlidableLineChartState._coordinatesMap}
   /// [Map] containing all coordinates data.
   ///
   /// Generated by [SlidableLineChart.coordinatesOptionsList] and rendered later
@@ -469,7 +504,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   /// {@endtemplate}
   late Map<E, Coordinates<E>> _coordinatesMap;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._coordinatesMap}
+  /// {@macro package.SlidableLineChartState._coordinatesMap}
   Map<E, Coordinates<E>> get coordinatesMap => _coordinatesMap;
 
   /// Display value to Y-axis offset value.
@@ -483,24 +518,26 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
           : chartActualHeight -
               (displayValue - widget.min) * yAxisDisplayValue2OffsetValueFactor;
 
-  /// {@template slidable_line_chart.SlidableLineChartState._getYAxisTickLineHeight}
+  /// {@template package.SlidableLineChartState._getYAxisTickLineHeight}
   /// Get Y-axis tick line height from the length of [_yAxis].
   ///
-  /// Calculate by subtracting `dy` from [SlidableLineChart.coordinateSystemOrigin].
+  /// Calculate by subtracting `dy` from
+  /// [SlidableLineChart.coordinateSystemOrigin].
   /// {@endtemplate}
   double _getYAxisTickLineHeight(double chartActualHeight) =>
       chartActualHeight / (_yAxis.length - 1);
 
-  /// {@template slidable_line_chart.SlidableLineChartState._currentSlideCoordinateIndex}
+  /// {@template package.SlidableLineChartState._currentSlideCoordinateIndex}
   /// The index of the current sliding coordinate.
   /// {@endtemplate}
   int? _currentSlideCoordinateIndex;
 
-  /// {@macro slidable_line_chart.SlidableLineChartState._currentSlideCoordinateIndex}
+  /// {@macro package.SlidableLineChartState._currentSlideCoordinateIndex}
   int? get currentSlideCoordinateIndex => _currentSlideCoordinateIndex;
 
   /// Return null when user does not select or [_slidableCoordinates] is null,
-  /// otherwise return the `index` of [Coordinate] selected in [_slidableCoordinates].
+  /// otherwise return the `index` of [Coordinate] selected in
+  /// [_slidableCoordinates].
   int? _hitTestCoordinate(Offset position) {
     final int? index = _slidableCoordinates?.value
         .indexWhere((Coordinate coordinate) => coordinate.hitTest(position));
@@ -523,8 +560,10 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     final double dyLogicRowsNumberOnSlidingArea = _keepBoundsRoundToDouble(
       _minLogicRowsNumberOnSlidingArea,
       _maxLogicRowsNumberOnSlidingArea,
-      value: (dy.clamp(minOffsetValueForSlidingAreaOnYAxis,
-                  maxOffsetValueForSlidingAreaOnYAxis) /
+      value: (dy.clamp(
+                minOffsetValueForSlidingAreaOnYAxis,
+                maxOffsetValueForSlidingAreaOnYAxis,
+              ) /
               (maxOffsetValueForSlidingAreaOnYAxis -
                   minOffsetValueForSlidingAreaOnYAxis)) *
           (_maxLogicRowsNumberOnSlidingArea - _minLogicRowsNumberOnSlidingArea),
@@ -539,9 +578,9 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     }
 
     return double.parse(
-      result.toStringAsFixed(
-        2,
-      ), // Reduce calculation error and limit decimal place precision of display value.
+      // Reduce calculation error and limit decimal place precision of display
+      // value.
+      result.toStringAsFixed(2),
     );
   }
 
@@ -558,155 +597,162 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   }
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (_, BoxConstraints constraints) {
-        final double chartWidth = constraints.maxWidth;
-        final double chartHeight = constraints.maxHeight;
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (_, BoxConstraints constraints) {
+          final double chartWidth = constraints.maxWidth;
+          final double chartHeight = constraints.maxHeight;
 
-        if (chartWidth == 0.0 || chartHeight == 0.0) {
-          return const SizedBox.shrink();
-        }
+          if (chartWidth == 0.0 || chartHeight == 0.0) {
+            return const SizedBox.shrink();
+          }
 
-        final double xAxisTickLineWidth = _getXAxisTickLineWidth(chartWidth);
+          final double xAxisTickLineWidth = _getXAxisTickLineWidth(chartWidth);
 
-        final double chartActualHeight =
-            chartHeight - widget.coordinateSystemOrigin.dy;
+          final double chartActualHeight =
+              chartHeight - widget.coordinateSystemOrigin.dy;
 
-        final double yAxisDisplayValue2OffsetValueFactor =
-            _getYAxisDisplayValue2OffsetValueFactor(chartActualHeight);
+          final double yAxisDisplayValue2OffsetValueFactor =
+              _getYAxisDisplayValue2OffsetValueFactor(chartActualHeight);
 
-        _coordinatesMap = <E, Coordinates<E>>{
-          for (final CoordinatesOptions<E> options
-              in widget.coordinatesOptionsList)
-            options.type: Coordinates<E>(
-              type: options.type,
-              value: options.values
-                  .mapIndexed(
-                    (int index, double value) => Coordinate(
-                      value: value,
-                      offset: Offset(
-                        (xAxisTickLineWidth / 2) +
-                            xAxisTickLineWidth * index +
-                            widget.coordinateSystemOrigin.dx,
-                        _displayValue2YAxisOffsetValue(
-                          value,
-                          chartActualHeight: chartActualHeight,
-                          yAxisDisplayValue2OffsetValueFactor:
-                              yAxisDisplayValue2OffsetValueFactor,
+          _coordinatesMap = <E, Coordinates<E>>{
+            for (final CoordinatesOptions<E> options
+                in widget.coordinatesOptionsList)
+              options.type: Coordinates<E>(
+                type: options.type,
+                value: options.values
+                    .mapIndexed(
+                      (int index, double value) => Coordinate(
+                        value: value,
+                        offset: Offset(
+                          xAxisTickLineWidth * (index + 0.5) +
+                              widget.coordinateSystemOrigin.dx,
+                          _displayValue2YAxisOffsetValue(
+                            value,
+                            chartActualHeight: chartActualHeight,
+                            yAxisDisplayValue2OffsetValueFactor:
+                                yAxisDisplayValue2OffsetValueFactor,
+                          ),
                         ),
+                        radius: options.radius,
+                        zoomedFactor: options.zoomedFactor,
                       ),
-                      radius: options.radius,
-                      zoomedFactor: options.zoomedFactor,
-                    ),
-                  )
-                  .toList(),
-            )
-        };
+                    )
+                    .toList(),
+              ),
+          };
 
-        _forwardAnimationControllerWhenIsDismissed();
+          _forwardAnimationControllerWhenIsDismissed();
 
-        late double minOffsetValueOnYAxisSlidingArea;
-        late double maxOffsetValueOnYAxisSlidingArea;
+          late double minOffsetValueOnYAxisSlidingArea;
+          late double maxOffsetValueOnYAxisSlidingArea;
 
-        if (widget.reversed) {
-          minOffsetValueOnYAxisSlidingArea = 0.0;
-          maxOffsetValueOnYAxisSlidingArea =
-              (1 - _percentDerivedArea) * chartActualHeight;
-        } else {
-          minOffsetValueOnYAxisSlidingArea =
-              _percentDerivedArea * chartActualHeight;
-          maxOffsetValueOnYAxisSlidingArea = chartActualHeight;
-        }
+          if (widget.reversed) {
+            minOffsetValueOnYAxisSlidingArea = 0.0;
+            maxOffsetValueOnYAxisSlidingArea =
+                (1 - _percentDerivedArea) * chartActualHeight;
+          } else {
+            minOffsetValueOnYAxisSlidingArea =
+                _percentDerivedArea * chartActualHeight;
+            maxOffsetValueOnYAxisSlidingArea = chartActualHeight;
+          }
 
-        final Widget coordinateSystemPainter = CustomPaint(
-          size: Size(chartWidth, chartHeight),
-          isComplex: true,
-          painter: CoordinateSystemPainter<E>(
-            slidableCoordinateType: widget.slidableCoordinateType,
-            xAxis: widget.xAxis,
-            coordinateSystemOrigin: widget.coordinateSystemOrigin,
-            min: widget.min,
-            max: widget.max,
-            divisions: widget.divisions,
-            reversed: widget.reversed,
-            onlyRenderEvenAxisLabel: widget.onlyRenderEvenAxisLabel,
-            onDrawCheckOrClose: widget.onDrawCheckOrClose,
-            yAxis: _yAxis,
-            slidableCoordinatesAnimationController:
-                _slidableCoordinatesAnimationController,
-            otherCoordinatesAnimationController:
-                _otherCoordinatesAnimationController,
-            getXAxisTickLineWidth: _getXAxisTickLineWidth,
-            coordinatesMap: _coordinatesMap,
-            getYAxisTickLineHeight: _getYAxisTickLineHeight,
-            maxOffsetValueOnYAxisSlidingArea: maxOffsetValueOnYAxisSlidingArea,
-            slidableLineChartThemeData:
-                SlidableLineChartTheme.maybeOf<E>(context),
-          ),
-        );
+          final Widget coordinateSystemPainter = CustomPaint(
+            size: Size(chartWidth, chartHeight),
+            isComplex: true,
+            painter: CoordinateSystemPainter<E>(
+              slidableCoordinateType: widget.slidableCoordinateType,
+              xAxis: widget.xAxis,
+              coordinateSystemOrigin: widget.coordinateSystemOrigin,
+              min: widget.min,
+              max: widget.max,
+              divisions: widget.divisions,
+              reversed: widget.reversed,
+              onlyRenderEvenAxisLabel: widget.onlyRenderEvenAxisLabel,
+              onDrawCheckOrClose: widget.onDrawCheckOrClose,
+              yAxis: _yAxis,
+              slidableCoordsAnimationCtrl: _slidableCoordsAnimationCtrl,
+              otherCoordsAnimationCtrl: _otherCoordsAnimationCtrl,
+              getXAxisTickLineWidth: _getXAxisTickLineWidth,
+              coordinatesMap: _coordinatesMap,
+              getYAxisTickLineHeight: _getYAxisTickLineHeight,
+              maxOffsetValueOnYAxisSlidingArea:
+                  maxOffsetValueOnYAxisSlidingArea,
+              slidableLineChartThemeData:
+                  SlidableLineChartTheme.maybeOf<E>(context),
+            ),
+          );
 
-        if (widget.onChange == null) {
-          return Opacity(opacity: 0.6, child: coordinateSystemPainter);
-        }
+          if (widget.onChange == null) {
+            return Opacity(opacity: 0.6, child: coordinateSystemPainter);
+          }
 
-        if (_slidableCoordinates == null) {
-          return coordinateSystemPainter;
-        }
+          if (_slidableCoordinates == null) {
+            return coordinateSystemPainter;
+          }
 
-        return GestureDetector(
-          onVerticalDragDown: (DragDownDetails details) {
-            _currentSlideCoordinateIndex =
-                _hitTestCoordinate(details.localPosition);
+          return GestureDetector(
+            onVerticalDragDown: (DragDownDetails details) {
+              _currentSlideCoordinateIndex =
+                  _hitTestCoordinate(details.localPosition);
 
-            if (_currentSlideCoordinateIndex != null) {
-              HapticFeedback.mediumImpact();
-            }
-          },
-          onVerticalDragStart: (DragStartDetails details) {
-            _currentSlideCoordinateIndex ??=
-                _hitTestCoordinate(details.localPosition);
+              if (_currentSlideCoordinateIndex != null) {
+                unawaited(HapticFeedback.mediumImpact());
+              }
+            },
+            onVerticalDragStart: (DragStartDetails details) {
+              _currentSlideCoordinateIndex ??=
+                  _hitTestCoordinate(details.localPosition);
 
-            widget.onChangeStart?.call(_coordinatesMap.values
-                .map((Coordinates<E> coordinates) => coordinates.toOptions())
-                .toList());
-          },
-          onVerticalDragUpdate: (DragUpdateDetails details) {
-            if (_currentSlideCoordinateIndex != null) {
-              final double displayValue = _getYAxisDisplayValueBySlidePrecision(
-                details.localPosition.dy,
-                chartActualHeight: chartActualHeight,
-                minOffsetValueForSlidingAreaOnYAxis:
-                    minOffsetValueOnYAxisSlidingArea,
-                maxOffsetValueForSlidingAreaOnYAxis:
-                    maxOffsetValueOnYAxisSlidingArea,
+              widget.onChangeStart?.call(
+                _coordinatesMap.values
+                    .map(
+                      (Coordinates<E> coordinates) => coordinates.toOptions(),
+                    )
+                    .toList(),
               );
+            },
+            onVerticalDragUpdate: (DragUpdateDetails details) {
+              if (_currentSlideCoordinateIndex != null) {
+                final double displayValue =
+                    _getYAxisDisplayValueBySlidePrecision(
+                  details.localPosition.dy,
+                  chartActualHeight: chartActualHeight,
+                  minOffsetValueForSlidingAreaOnYAxis:
+                      minOffsetValueOnYAxisSlidingArea,
+                  maxOffsetValueForSlidingAreaOnYAxis:
+                      maxOffsetValueOnYAxisSlidingArea,
+                );
 
-              _coordinatesMap[widget.slidableCoordinateType]!
-                      .value[_currentSlideCoordinateIndex!] =
-                  _slidableCoordinates!.value[_currentSlideCoordinateIndex!]
-                      .copyWith(value: displayValue);
+                _coordinatesMap[widget.slidableCoordinateType]!
+                        .value[_currentSlideCoordinateIndex!] =
+                    _slidableCoordinates!.value[_currentSlideCoordinateIndex!]
+                        .copyWith(value: displayValue);
 
-              widget.onChange!.call(_coordinatesMap.values
-                  .map(
-                    (Coordinates<E> coordinates) => coordinates.toOptions(),
-                  )
-                  .toList());
-            }
-          },
-          onVerticalDragEnd: (DragEndDetails details) {
-            _currentSlideCoordinateIndex = null;
+                widget.onChange!.call(
+                  _coordinatesMap.values
+                      .map(
+                        (Coordinates<E> coordinates) => coordinates.toOptions(),
+                      )
+                      .toList(),
+                );
+              }
+            },
+            onVerticalDragEnd: (DragEndDetails details) {
+              _currentSlideCoordinateIndex = null;
 
-            widget.onChangeEnd?.call(_coordinatesMap.values
-                .map((Coordinates<E> coordinates) => coordinates.toOptions())
-                .toList());
-          },
-          onVerticalDragCancel: () {
-            _currentSlideCoordinateIndex = null;
-          },
-          child: RepaintBoundary(child: coordinateSystemPainter),
-        );
-      },
-    );
-  }
+              widget.onChangeEnd?.call(
+                _coordinatesMap.values
+                    .map(
+                      (Coordinates<E> coordinates) => coordinates.toOptions(),
+                    )
+                    .toList(),
+              );
+            },
+            onVerticalDragCancel: () {
+              _currentSlideCoordinateIndex = null;
+            },
+            child: RepaintBoundary(child: coordinateSystemPainter),
+          );
+        },
+      );
 }
