@@ -638,7 +638,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
                       ),
                     )
                     .toList(),
-              )
+              ),
           };
 
           _forwardAnimationControllerWhenIsDismissed();

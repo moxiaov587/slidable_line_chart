@@ -37,7 +37,7 @@ void main() {
           CoordinateType.left,
           values: <double>[
             min.toDouble(),
-            ...List<double>.generate(xAxis.length - 1, (_) => max.toDouble())
+            ...List<double>.generate(xAxis.length - 1, (_) => max.toDouble()),
           ],
         ),
       ];

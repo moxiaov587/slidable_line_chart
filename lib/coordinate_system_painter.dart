@@ -566,7 +566,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         <Offset>[
           Offset(x - radius, y),
           Offset(x - radius / 3, y + (radius - radius / 3)),
-          Offset(x + radius, y - radius * 2 / 3)
+          Offset(x + radius, y - radius * 2 / 3),
         ],
         false,
       );

@@ -201,7 +201,7 @@ class SlidableLineChartThemeData<E extends Enum> {
 
     return <E, CoordinatesStyle<E>>{
       for (final CoordinatesStyle<E> item in coordinatesStyleList!)
-        item.type: item
+        item.type: item,
     };
   }
 
