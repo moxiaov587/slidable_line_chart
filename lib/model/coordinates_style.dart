@@ -1,7 +1,9 @@
 part of '../theme/slidable_line_chart_theme.dart';
 
+/// The style of [Coordinates].
 @immutable
 class CoordinatesStyle<E extends Enum> {
+  /// Creates a coordinates style.
   const CoordinatesStyle({
     required this.type,
     this.pointColor,
@@ -26,14 +28,13 @@ class CoordinatesStyle<E extends Enum> {
   final Color? fillAreaColor;
 
   @override
-  bool operator ==(Object other) {
-    return other is CoordinatesStyle<E> &&
-        type == other.type &&
-        pointColor == other.pointColor &&
-        tapAreaColor == other.tapAreaColor &&
-        lineColor == other.lineColor &&
-        fillAreaColor == other.fillAreaColor;
-  }
+  bool operator ==(Object other) =>
+      other is CoordinatesStyle<E> &&
+      type == other.type &&
+      pointColor == other.pointColor &&
+      tapAreaColor == other.tapAreaColor &&
+      lineColor == other.lineColor &&
+      fillAreaColor == other.fillAreaColor;
 
   @override
   int get hashCode => Object.hash(

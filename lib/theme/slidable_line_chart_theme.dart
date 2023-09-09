@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../coordinate_system_painter.dart' show CoordinateSystemPainter;
+import '../model/coordinates_options.dart' show Coordinates;
+import '../slidable_line_chart.dart' show SlidableLineChart;
+
 part '../model/coordinates_style.dart';
 
+/// Coordinate point color by default.
 const List<Color> kColorPalette = <Color>[
   Colors.blue,
   Colors.red,
@@ -9,31 +14,68 @@ const List<Color> kColorPalette = <Color>[
   Colors.lightGreen,
 ];
 
+/// Axis label style by default.
 const TextStyle kAxisLabelStyle = TextStyle(
   fontSize: 12,
   color: Colors.black,
 );
+
+/// Axis line color by default.
 const Color kAxisLineColor = Colors.black;
+
+/// Axis line width by default.
 const double kAxisLineWidth = 1.0;
+
+/// Grid line color by default.
 const Color kGridLineColor = Colors.blueGrey;
+
+/// Grid line width by default.
 const double kGridLineWidth = 0.5;
+
+/// Show tap area by default.
 const bool kShowTapArea = true;
+
+/// Line width by default.
 const double kLineWidth = 2.0;
+
+/// Display value text style by default.
 const TextStyle kDisplayValueTextStyle = TextStyle(
   fontSize: 14,
   color: Colors.blueGrey,
 );
+
+/// Display value text margin bottom by default.
 const double kDisplayValueMarginBottom = 10.0;
+
+/// Indicator margin top by default.
 const double kIndicatorMarginTop = 30.0;
+
+/// Indicator radius by default.
 const double kIndicatorRadius = 5.0;
+
+/// Check background color by default.
 const Color kCheckBackgroundColor = Colors.blue;
+
+/// Close background color by default.
 const Color kCloseBackgroundColor = Colors.red;
+
+/// Check symbol color by default.
 const Color kCheckColor = Colors.white;
+
+/// Close symbol color by default.
 const Color kCloseColor = Colors.white;
+
+/// Smoothness by default.
 const double kSmooth = 0.0;
 
+/// {@template package.SlidableLineChartThemeData}
+/// Defines the configuration of the overall visual [SlidableLineChartThemeData]
+/// for a [SlidableLineChart].
+/// {@endtemplate}
 @immutable
 class SlidableLineChartThemeData<E extends Enum> {
+  /// Create a [SlidableLineChartThemeData] that's used to configure a
+  /// [SlidableLineChartTheme].
   const SlidableLineChartThemeData({
     this.coordinatesStyleList,
     this.axisLabelStyle,
@@ -52,8 +94,10 @@ class SlidableLineChartThemeData<E extends Enum> {
     this.checkColor,
     this.closeColor,
     this.smooth,
-  }) : assert(smooth == null || (smooth >= 0.0 && smooth <= 1.0),
-            'smooth($smooth) must be between [0-1]');
+  }) : assert(
+          smooth == null || (smooth >= 0.0 && smooth <= 1.0),
+          'smooth($smooth) must be between [0-1]',
+        );
 
   /// All coordinates style list.
   ///
@@ -146,6 +190,10 @@ class SlidableLineChartThemeData<E extends Enum> {
   /// If this value are null, then [kSmooth] will be used.
   final double? smooth;
 
+  /// Generate a [Map] from the current [coordinatesStyleList].
+  ///
+  /// Convenient and efficient access to the corresponding [E] of
+  /// [CoordinatesStyle].
   Map<E, CoordinatesStyle<E>>? get coordinatesStyleMap {
     if (coordinatesStyleList == null || coordinatesStyleList!.isEmpty) {
       return null;
@@ -228,31 +276,38 @@ class SlidableLineChartThemeData<E extends Enum> {
       );
 }
 
+/// An [InheritedWidget] that defines visual properties like colors and text
+/// styles, which the [CoordinateSystemPainter] in the subtree depends on.
 class SlidableLineChartTheme<E extends Enum> extends InheritedWidget {
+  /// Create a [SlidableLineChartTheme] to provide [SlidableLineChartThemeData]
+  /// to [CoordinateSystemPainter] in the subtree.
   const SlidableLineChartTheme({
     Key? key,
     required this.data,
     required Widget child,
-  }) : super(
-          key: key,
-          child: child,
-        );
+  }) : super(key: key, child: child);
 
+  /// The [SlidableLineChartThemeData] provided to the
+  /// [CoordinateSystemPainter] in the subtree.
   final SlidableLineChartThemeData<E> data;
 
+  /// The data from the closest [SlidableLineChartTheme] instance that encloses
+  /// the given context.
   static SlidableLineChartThemeData<E> of<E extends Enum>(
-      BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()!
-        .data;
-  }
+    BuildContext context,
+  ) =>
+      context
+          .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()!
+          .data;
 
+  /// The data from the closest [SlidableLineChartTheme] instance that encloses
+  /// the given context, if any.
   static SlidableLineChartThemeData<E>? maybeOf<E extends Enum>(
-      BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()
-        ?.data;
-  }
+    BuildContext context,
+  ) =>
+      context
+          .dependOnInheritedWidgetOfExactType<SlidableLineChartTheme<E>>()
+          ?.data;
 
   @override
   bool updateShouldNotify(covariant SlidableLineChartTheme<E> oldWidget) =>

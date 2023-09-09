@@ -1,7 +1,9 @@
 part of 'coordinates_options.dart';
 
+/// An instance of coordinate point mapped by [CoordinatesOptions].
 @immutable
 class Coordinate {
+  /// Creates a coordinate point.
   const Coordinate({
     required this.value,
     this.offset = Offset.zero,
@@ -38,16 +40,14 @@ class Coordinate {
         radius: _zoomedRadius,
       );
 
+  /// Tests whether a given point will be considered to hit a coordinate point.
+  ///
+  /// Returns true if the user's touch point is within the range of
+  /// [zoomedRect], otherwise returns false.
   bool hitTest(Offset position) => zoomedRect.contains(position);
 
-  void drawCoordinatePoint(Canvas canvas, Paint paint) {
-    canvas.drawOval(rect, paint);
-  }
-
-  void drawTapArea(Canvas canvas, Paint paint) {
-    canvas.drawOval(zoomedRect, paint);
-  }
-
+  /// Creates a new [Coordinate] from this one by updating individual
+  /// properties.
   Coordinate copyWith({
     double? value,
     Offset? offset,
