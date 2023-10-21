@@ -20,9 +20,9 @@ jobs:
         channel: 'stable'
 
     - name: Log Dart/Flutter versions
-        run: |
-          dart --version
-          flutter --version
+      run: |
+        dart --version
+        flutter --version
 
     - name: Install dependencies
       run: flutter packages get
