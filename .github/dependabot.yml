@@ -11,7 +11,7 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "gradle"
-    directory: "/example/android"
+    directory: "/example/android/app"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10

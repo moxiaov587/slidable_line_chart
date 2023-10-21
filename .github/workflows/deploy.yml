@@ -1,0 +1,37 @@
+name: Deploy to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Setup flutter sdk
+      uses: subosito/flutter-action@v2
+      with:
+        channel: 'stable'
+
+    - name: Log Dart/Flutter versions
+        run: |
+          dart --version
+          flutter --version
+
+    - name: Install dependencies
+      run: flutter packages get
+
+    - name: Build web
+      run: cd example; flutter build web --release --base-href '/slidable_line_chart/'
+
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./example/build/web
