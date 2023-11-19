@@ -10,6 +10,10 @@ Show a line chart and change it.
 - Supports set the minimum value for each slide by the user
 - Supports dark mode and custom styles
 
+## Live preview
+
+[Link](https://moxiaov587.github.io/slidable_line_chart/)
+
 ## Preview
 
 | ![](screenshots/preview.gif) |
@@ -32,24 +36,25 @@ Fields in `CoordinatesOptions`:
 
 Fields in `SlidableLineChart`:
 
-| Name                            | Type                              | Description                                                                                 | Default Value                |
-|---------------------------------|-----------------------------------|---------------------------------------------------------------------------------------------|------------------------------|
-| slidableCoordinateType          | `Enum?`                           | The type of coordinates the user can slide.                                                 | `null`                       |
-| coordinatesOptionsList          | `List<CoordinatesOptions<Enum>>`  | An array contain coordinates configuration information.                                     | `none`                       |
-| xAxis                           | `List<String>`                    | Labels displayed on the x-axis.                                                             | `none`                       |
-| min                             | `int`                             | The minimum value that the user can slide to.                                               | `none`                       |
-| max                             | `int`                             | The maximum value that the user can slide to.                                               | `none`                       |
-| coordinateSystemOrigin          | `Offset`                          | Coordinate system origin offset value.                                                      | `const Offset(6.0, 6.0)`     |
-| divisions                       | `int`                             | The division value of y-axis.                                                               | `1`                          |
-| slidePrecision                  | `double?`                         | The minimum value for each slide by the user.                                               | `null`                       |
-| reversed                        | `bool`                            | Whether the coordinate system is reversed.                                                  | `false`                      |
-| onlyRenderEvenAxisLabel         | `bool`                            | Whether the y-axis label renders only even items.                                           | `true`                       |
-| enableInitializationAnimation   | `bool`                            | Whether the coordinate system triggers animation when initialized.                          | `true`                       |
-| initializationAnimationDuration | `Duration`                        | Initialize the duration of the animation.                                                   | `const Duration(seconds: 1)` |
-| onDrawCheckOrClose              | `OnDrawCheckOrClose?`             | Called when the user slides coordinate, the return value determines the indicator type.     | `null`                       |
-| onChange                        | `CoordinatesOptionsChanged<Enum>` | Called when the user slides coordinate.                                                     | `null`                       |
-| onChangeStart                   | `CoordinatesOptionsChanged<Enum>` | Called when the user starts sliding coordinate.                                             | `null`                       |
-| onChangeEnd                     | `CoordinatesOptionsChanged<Enum>` | Called when the user stops sliding coordinate.                                              | `null`                       |
+| Name                            | Type                              | Description                                                                             | Default Value                |
+|---------------------------------|-----------------------------------|-----------------------------------------------------------------------------------------|------------------------------|
+| slidableCoordinateType          | `Enum?`                           | The type of coordinates the user can slide.                                             | `null`                       |
+| coordinatesOptionsList          | `List<CoordinatesOptions<Enum>>`  | An array contain coordinates configuration information.                                 | `none`                       |
+| xAxis                           | `List<String>`                    | Labels displayed on the x-axis.                                                         | `none`                       |
+| min                             | `int`                             | The minimum value that the user can slide to.                                           | `none`                       |
+| max                             | `int`                             | The maximum value that the user can slide to.                                           | `none`                       |
+| coordinateSystemOrigin          | `Offset`                          | Coordinate system origin offset value.                                                  | `const Offset(6.0, 6.0)`     |
+| divisions                       | `int`                             | The division value of y-axis.                                                           | `1`                          |
+| slidePrecision                  | `double?`                         | The minimum value for each slide by the user.                                           | `null`                       |
+| reversed                        | `bool`                            | Whether the coordinate system is reversed.                                              | `false`                      |
+| onlyRenderEvenAxisLabel         | `bool`                            | Whether the y-axis label renders only even items.                                       | `true`                       |
+| enableInitializationAnimation   | `bool`                            | Whether the coordinate system triggers animation when initialized.                      | `true`                       |
+| initializationAnimationDuration | `Duration`                        | Initialize the duration of the animation.                                               | `const Duration(seconds: 1)` |
+| enableFeedback                  | `bool`                            | Whether audible and/or haptic feedback should be provided during user interaction.      | `true`                       |
+| onDrawCheckOrClose              | `OnDrawCheckOrClose?`             | Called when the user slides coordinate, the return value determines the indicator type. | `null`                       |
+| onChange                        | `CoordinatesOptionsChanged<Enum>` | Called when the user slides coordinate.                                                 | `null`                       |
+| onChangeStart                   | `CoordinatesOptionsChanged<Enum>` | Called when the user starts sliding coordinate.                                         | `null`                       |
+| onChangeEnd                     | `CoordinatesOptionsChanged<Enum>` | Called when the user stops sliding coordinate.                                          | `null`                       |
 
 Fields in `CoordinatesStyle`:
 
@@ -71,12 +76,8 @@ Fields in `SlidableLineChartThemeData`:
 | axisLineWidth               | `double?`                        | Axis line width for the coordinate system.                        | `null`        |
 | gridLineColor               | `Color?`                         | Grid line color for the coordinate system.                        | `null`        |
 | gridLineWidth               | `double?`                        | Grid line width for the coordinate system.                        | `null`        |
-| defaultCoordinatePointColor | `Color?`                         | Default coordinate point color on the all coordinates.            | `null`        |
 | showTapArea                 | `bool?`                          | Whether to display the user's touch area.                         | `null`        |
-| defaultTapAreaColor         | `Color?`                         | Default slidable coordinate point touch area color.               | `null`        |
-| defaultLineColor            | `Color?`                         | Default color of the line on the all coordinates.                 | `null`        |
 | lineWidth                   | `double?`                        | Line width on the all coordinates.                                | `null`        |
-| defaultFillAreaColor        | `Color?`                         | Default fill area color of the line on the all coordinates.       | `null`        |
 | displayValueTextStyle       | `TextStyle?`                     | Text style for display value on the coordinate system.            | `null`        |
 | displayValueMarginBottom    | `double?`                        | Margin bottom for display value on the coordinate system.         | `null`        |
 | indicatorMarginTop          | `double?`                        | Margin top for check or close indicator on the coordinate system. | `null`        |

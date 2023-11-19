@@ -2,9 +2,9 @@
 library slidable_line_chart;
 
 import 'dart:async' show unawaited;
+
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import 'coordinate_system_painter.dart';
 import 'model/coordinates_options.dart';
@@ -45,7 +45,8 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
     this.reversed = false,
     this.onlyRenderEvenAxisLabel = true,
     this.enableInitializationAnimation = true,
-    this.initializationAnimationDuration = const Duration(seconds: 1),
+    this.initializationAnimationDuration = const Duration(milliseconds: 1200),
+    this.enableFeedback = true,
     this.onDrawCheckOrClose,
     this.onChange,
     this.onChangeStart,
@@ -170,6 +171,15 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// Defaults to Duration(seconds: 1).
   final Duration initializationAnimationDuration;
+
+  /// Whether audible and/or haptic feedback should be provided during user
+  /// interaction.
+  ///
+  /// For example, with feedback enabled, a brief vibration occurs when the
+  /// user presses a selected slidable coordinate point.
+  ///
+  /// Defaults to true.
+  final bool enableFeedback;
 
   /// {@template package.SlidableLineChart.onDrawCheckOrClose}
   /// Called when the user slides coordinate, the return value determines the
@@ -695,8 +705,9 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
               _currentSlideCoordinateIndex =
                   _hitTestCoordinate(details.localPosition);
 
-              if (_currentSlideCoordinateIndex != null) {
-                unawaited(HapticFeedback.mediumImpact());
+              if (widget.enableFeedback &&
+                  _currentSlideCoordinateIndex != null) {
+                unawaited(Feedback.forLongPress(context));
               }
             },
             onVerticalDragStart: (DragStartDetails details) {

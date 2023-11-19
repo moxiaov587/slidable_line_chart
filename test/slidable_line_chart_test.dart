@@ -3,13 +3,14 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:slidable_line_chart/slidable_line_chart.dart';
 
 enum CoordinateType {
   left,
   right,
 }
+
+const Duration kInitializationAnimationDuration = Duration(milliseconds: 1200);
 
 void main() {
   testWidgets(
@@ -104,7 +105,7 @@ void main() {
 
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(kInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
@@ -175,7 +176,7 @@ void main() {
       await tester.pump();
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(kInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
@@ -351,7 +352,7 @@ void main() {
 
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(kInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
