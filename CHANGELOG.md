@@ -1,3 +1,8 @@
+## 1.1.1
+
+- Add `enableFeedback` parameter.
+- Add animation effects to coordinate points.
+
 ## 1.1.0
 
 - Improve curve chart display.
