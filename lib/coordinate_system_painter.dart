@@ -148,10 +148,10 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     _drawXAxis(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
     _drawYAxis(canvas);
 
-    _drawCoordinates(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
+    _drawRemaining(canvas, xAxisTickLineWidth: xAxisTickLineWidth);
   }
 
-  void _drawCoordinates(
+  void _drawRemaining(
     Canvas canvas, {
     required double xAxisTickLineWidth,
   }) {
@@ -181,12 +181,12 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
                 .withOpacity(0.5 * finalCoordinatePointColor.opacity),
       );
 
-      for (final Coordinate coordinate in coordinates.value) {
-        canvas.drawOval(
-          coordinate.rect,
-          _coordinatePointPaint..color = finalCoordinatePointColor,
-        );
-      }
+      _drawCoordinates(
+        canvas,
+        values: coordinates.value,
+        finalCoordinatePointColor: finalCoordinatePointColor,
+        animationController: otherCoordsAnimationCtrl,
+      );
     }
 
     final Coordinates<E>? slidableCoordinates =
@@ -200,6 +200,11 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
               ?.pointColor ??
           kColorPalette[slidableCoordinateType!.index % kColorPalette.length];
 
+      final Color finalTapAreaColor = slidableCoordinatesStyle?.tapAreaColor ??
+          finalSlidableCoordinatePointColor.withOpacity(
+            0.2 * finalSlidableCoordinatePointColor.opacity,
+          );
+
       _drawLineAndFillArea(
         canvas,
         animationController: slidableCoordsAnimationCtrl,
@@ -211,23 +216,91 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
                 .withOpacity(0.5 * finalSlidableCoordinatePointColor.opacity),
       );
 
-      for (final Coordinate coordinate in slidableCoordinates.value) {
-        if (slidableLineChartThemeData?.showTapArea ?? kShowTapArea) {
-          canvas.drawOval(
-            coordinate.zoomedRect,
-            _tapAreaPaint
-              ..color = slidableCoordinatesStyle?.tapAreaColor ??
-                  finalSlidableCoordinatePointColor.withOpacity(
-                    0.2 * finalSlidableCoordinatePointColor.opacity,
-                  ),
-          );
-        }
+      _drawCoordinates(
+        canvas,
+        values: slidableCoordinates.value,
+        finalCoordinatePointColor: finalSlidableCoordinatePointColor,
+        animationController: slidableCoordsAnimationCtrl,
+        finalTapAreaColor: finalTapAreaColor,
+      );
+    }
+  }
 
-        canvas.drawOval(
-          coordinate.rect,
-          _coordinatePointPaint..color = finalSlidableCoordinatePointColor,
+  void _drawCoordinates(
+    Canvas canvas, {
+    required List<Coordinate> values,
+    required Color finalCoordinatePointColor,
+    AnimationController? animationController,
+    Color? finalTapAreaColor,
+  }) {
+    final double weight = 1 / values.length;
+
+    final int renderIndex =
+        ((animationController?.value ?? 1) / weight).floor();
+
+    if (animationController != null) {
+      final List<TweenSequenceItem<Rect?>> items1 =
+          <TweenSequenceItem<Rect?>>[];
+      final List<TweenSequenceItem<Rect?>> items2 =
+          <TweenSequenceItem<Rect?>>[];
+
+      for (final Coordinate coordinate in values) {
+        items1.add(
+          TweenSequenceItem<Rect?>(
+            tween: RectTween(
+              begin: Rect.fromCircle(center: coordinate.offset, radius: 0),
+              end: coordinate.rect,
+            ),
+            weight: weight,
+          ),
         );
 
+        if (finalTapAreaColor != null) {
+          items2.add(
+            TweenSequenceItem<Rect?>(
+              tween: RectTween(
+                begin: Rect.fromCircle(center: coordinate.offset, radius: 0),
+                end: coordinate.zoomedRect,
+              ),
+              weight: weight,
+            ),
+          );
+        }
+      }
+
+      canvas.drawOval(
+        TweenSequence<Rect?>(items1).evaluate(animationController)!,
+        _coordinatePointPaint..color = finalCoordinatePointColor,
+      );
+
+      if (finalTapAreaColor != null) {
+        canvas.drawOval(
+          TweenSequence<Rect?>(items2).evaluate(animationController)!,
+          _tapAreaPaint..color = finalTapAreaColor,
+        );
+      }
+    }
+
+    for (int index = 0; index < values.length; index++) {
+      final Coordinate coordinate = values[index];
+
+      if (animationController == null ||
+          (index != values.length - 1 && renderIndex > index)) {
+        canvas.drawOval(
+          coordinate.rect,
+          _coordinatePointPaint..color = finalCoordinatePointColor,
+        );
+
+        if (finalTapAreaColor != null &&
+            (slidableLineChartThemeData?.showTapArea ?? kShowTapArea)) {
+          canvas.drawOval(
+            coordinate.zoomedRect,
+            _tapAreaPaint..color = finalTapAreaColor,
+          );
+        }
+      }
+
+      if (finalTapAreaColor != null) {
         _drawDisplayValueText(
           canvas,
           dx: coordinate.offset.dx,

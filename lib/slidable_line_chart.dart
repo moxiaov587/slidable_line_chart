@@ -45,7 +45,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
     this.reversed = false,
     this.onlyRenderEvenAxisLabel = true,
     this.enableInitializationAnimation = true,
-    this.initializationAnimationDuration = const Duration(seconds: 1),
+    this.initializationAnimationDuration = const Duration(milliseconds: 1200),
     this.enableFeedback = true,
     this.onDrawCheckOrClose,
     this.onChange,
