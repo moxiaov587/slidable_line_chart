@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-
 import 'package:slidable_line_chart/slidable_line_chart.dart';
 
 enum _CoordinateType {
@@ -40,15 +39,16 @@ class TestData {
 const List<double?> slidePrecisionList = [null, 1.0, 0.1, 0.01];
 
 class FullFeatExample extends StatefulWidget {
-  const FullFeatExample({Key? key}) : super(key: key);
+  const FullFeatExample({Key? key, required this.switchThemeFn})
+      : super(key: key);
+
+  final VoidCallback switchThemeFn;
 
   @override
   State<FullFeatExample> createState() => _FullFeatExampleState();
 }
 
 class _FullFeatExampleState extends State<FullFeatExample> {
-  bool isDarkMode = false;
-
   final List<TestData> testData = [
     TestData(
       min: -37,
@@ -111,283 +111,245 @@ class _FullFeatExampleState extends State<FullFeatExample> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      themeMode: isDarkMode ? ThemeMode.dark : ThemeMode.light,
-      theme: ThemeData.light().copyWith(
-        primaryColor: const Color(0xff36cfc9),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff36cfc9),
-          error: const Color(0xfff759ab),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Full feat example'),
       ),
-      darkTheme: ThemeData.dark().copyWith(
-        primaryColor: const Color(0xff1765ad),
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xff1765ad),
-          error: const Color(0xffa61d24),
-        ),
-      ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Full feat example'),
-        ),
-        body: Builder(builder: (context) {
-          return Column(
-            children: [
-              Container(
-                height: 300,
-                margin: const EdgeInsets.only(top: 50),
-                padding: const EdgeInsets.only(
-                  left: 30,
-                  right: 10,
-                ),
-                child: Center(
-                  child: SlidableLineChartTheme(
-                    data: SlidableLineChartThemeData<_CoordinateType>(
-                      coordinatesStyleList: [
-                        CoordinatesStyle<_CoordinateType>(
-                          type: _CoordinateType.left,
-                          pointColor: Theme.of(context).primaryColor,
-                          lineColor: Theme.of(context).primaryColor,
-                          fillAreaColor:
-                              Theme.of(context).primaryColor.withOpacity(.5),
-                        ),
-                        CoordinatesStyle<_CoordinateType>(
-                          type: _CoordinateType.right,
-                          pointColor: Theme.of(context).colorScheme.error,
-                          lineColor: Theme.of(context).colorScheme.error,
-                          fillAreaColor: Theme.of(context)
-                              .colorScheme
-                              .error
-                              .withOpacity(.5),
-                        ),
-                      ],
-                      showTapArea: true,
-                      smooth: smooth,
-                    ),
-                    child: SlidableLineChart(
-                      key: _key,
-                      slidableCoordinateType: slidableCoordinateType,
-                      coordinatesOptionsList: coordinatesOptionsList,
-                      xAxis: const <String>[
-                        '500',
-                        '1k',
-                        '2k',
-                        '4k',
-                        '6k',
-                        '8k'
-                      ],
-                      min: min,
-                      max: max,
-                      divisions: divisions,
-                      slidePrecision: slidePrecision,
-                      reversed: reversed,
-                      // onlyRenderEvenAxisLabel: false,
-                      enableInitializationAnimation:
-                          enableInitializationAnimation,
-                      // initializationAnimationDuration:
-                      //     const Duration(milliseconds: 1000),
-                      onDrawCheckOrClose: (double value) {
-                        return value >= 30;
-                      },
-                      onChange:
-                          (List<CoordinatesOptions<_CoordinateType>> options) {
-                        setState(() => testData[index].data = options);
-                      },
-                      onChangeEnd:
-                          (List<CoordinatesOptions<_CoordinateType>> options) {
-                        setState(() => result = options
-                            .singleWhere((options) =>
-                                options.type == slidableCoordinateType)
-                            .values
-                            .join(','));
-                      },
-                    ),
+      body: Builder(builder: (context) {
+        return Column(
+          children: [
+            Container(
+              height: 300,
+              margin: const EdgeInsets.only(top: 50),
+              padding: const EdgeInsets.only(
+                left: 30,
+                right: 10,
+              ),
+              child: Center(
+                child: SlidableLineChartTheme(
+                  data: SlidableLineChartThemeData<_CoordinateType>(
+                    coordinatesStyleList: [
+                      CoordinatesStyle<_CoordinateType>(
+                        type: _CoordinateType.left,
+                        pointColor: Theme.of(context).primaryColor,
+                        lineColor: Theme.of(context).primaryColor,
+                        fillAreaColor:
+                            Theme.of(context).primaryColor.withOpacity(.5),
+                      ),
+                      CoordinatesStyle<_CoordinateType>(
+                        type: _CoordinateType.right,
+                        pointColor: Theme.of(context).colorScheme.error,
+                        lineColor: Theme.of(context).colorScheme.error,
+                        fillAreaColor:
+                            Theme.of(context).colorScheme.error.withOpacity(.5),
+                      ),
+                    ],
+                    showTapArea: true,
+                    smooth: smooth,
+                  ),
+                  child: SlidableLineChart(
+                    key: _key,
+                    slidableCoordinateType: slidableCoordinateType,
+                    coordinatesOptionsList: coordinatesOptionsList,
+                    xAxis: const <String>['500', '1k', '2k', '4k', '6k', '8k'],
+                    min: min,
+                    max: max,
+                    divisions: divisions,
+                    slidePrecision: slidePrecision,
+                    reversed: reversed,
+                    // onlyRenderEvenAxisLabel: false,
+                    enableInitializationAnimation:
+                        enableInitializationAnimation,
+                    // initializationAnimationDuration:
+                    //     const Duration(milliseconds: 2000),
+                    onDrawCheckOrClose: (double value) {
+                      return value >= 30;
+                    },
+                    onChange:
+                        (List<CoordinatesOptions<_CoordinateType>> options) {
+                      setState(() => testData[index].data = options);
+                    },
+                    onChangeEnd:
+                        (List<CoordinatesOptions<_CoordinateType>> options) {
+                      setState(() => result = options
+                          .singleWhere((options) =>
+                              options.type == slidableCoordinateType)
+                          .values
+                          .join(','));
+                    },
                   ),
                 ),
               ),
-              Container(
-                margin: const EdgeInsets.only(
-                  top: 50,
-                  bottom: 30,
-                ),
-                child: Text(
-                  result ?? 'Echo data after sliding.',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
+            ),
+            Container(
+              margin: const EdgeInsets.only(
+                top: 50,
+                bottom: 30,
               ),
-              Container(
-                margin: const EdgeInsets.only(
-                  bottom: 30,
-                ),
-                child: Text(
-                  'Current Slide Precision is $slidePrecision',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+              child: Text(
+                result ?? 'Echo data after sliding.',
+                style: Theme.of(context).textTheme.titleLarge,
               ),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 20,
-                runSpacing: 10,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {
-                      _CoordinateType? type;
-                      switch (slidableCoordinateType) {
-                        case null:
-                          type = _CoordinateType.left;
-                          break;
-                        case _CoordinateType.left:
-                          type = _CoordinateType.right;
-                          break;
-                        case _CoordinateType.right:
-                          break;
-                      }
+            ),
+            Container(
+              margin: const EdgeInsets.only(
+                bottom: 30,
+              ),
+              child: Text(
+                'Current Slide Precision is $slidePrecision',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 20,
+              runSpacing: 10,
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _CoordinateType? type;
+                    switch (slidableCoordinateType) {
+                      case null:
+                        type = _CoordinateType.left;
+                        break;
+                      case _CoordinateType.left:
+                        type = _CoordinateType.right;
+                        break;
+                      case _CoordinateType.right:
+                        break;
+                    }
 
-                      setState(() {
-                        result = null;
-                        slidableCoordinateType = type;
-                      });
-                    },
-                    child: Text(
-                      'Toggle Slidable Type',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    setState(() {
+                      result = null;
+                      slidableCoordinateType = type;
+                    });
+                  },
+                  child: Text(
+                    'Toggle Slidable Type',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      _slidableLineChartState?.resetAnimationController();
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _slidableLineChartState?.resetAnimationController();
 
-                      setState(() => reversed = !reversed);
-                    },
-                    child: Text(
-                      'Reversed',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    setState(() => reversed = !reversed);
+                  },
+                  child: Text(
+                    'Reversed',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      // _slidableLineChartState?.resetAnimationController();
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    // _slidableLineChartState?.resetAnimationController();
 
-                      setState(() => smooth = smooth == 0.0 ? 0.5 : 0.0);
-                    },
-                    child: Text(
-                      'Smooth',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    setState(() => smooth = smooth == 0.0 ? 0.5 : 0.0);
+                  },
+                  child: Text(
+                    'Smooth',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() => enableInitializationAnimation =
-                          !enableInitializationAnimation);
-                    },
-                    child: Text(
-                      '${enableInitializationAnimation ? 'Disable' : 'Enable'} Animation',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() => enableInitializationAnimation =
+                        !enableInitializationAnimation);
+                  },
+                  child: Text(
+                    '${enableInitializationAnimation ? 'Disable' : 'Enable'} Animation',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      int data = slidePrecisionIndex + 1;
-                      data = data == slidePrecisionList.length ? 0 : data;
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    int data = slidePrecisionIndex + 1;
+                    data = data == slidePrecisionList.length ? 0 : data;
 
-                      setState(() => slidePrecisionIndex = data);
-                    },
-                    child: Text(
-                      'Toggle Slide Precision',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    setState(() => slidePrecisionIndex = data);
+                  },
+                  child: Text(
+                    'Toggle Slide Precision',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      int data = index + 1;
-                      data = data == testData.length ? 0 : data;
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    int data = index + 1;
+                    data = data == testData.length ? 0 : data;
 
-                      _slidableLineChartState?.resetAnimationController();
+                    _slidableLineChartState?.resetAnimationController();
 
-                      setState(() {
-                        result = null;
-                        index = data;
-                      });
-                    },
-                    child: Text(
-                      'Toggle Test Data',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    setState(() {
+                      result = null;
+                      index = data;
+                    });
+                  },
+                  child: Text(
+                    'Toggle Test Data',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      _slidableLineChartState?.resetAnimationController(
-                        resetAll: false,
-                      );
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    _slidableLineChartState?.resetAnimationController(
+                      resetAll: false,
+                    );
 
-                      setState(() => testData[index].data = [
-                            slidableCoordinateType == _CoordinateType.left
-                                ? _backupTestData[index][0]
-                                : testData[index].data[0],
-                            slidableCoordinateType != _CoordinateType.left
-                                ? _backupTestData[index][1]
-                                : testData[index].data[1],
-                          ]);
+                    setState(() => testData[index].data = [
+                          slidableCoordinateType == _CoordinateType.left
+                              ? _backupTestData[index][0]
+                              : testData[index].data[0],
+                          slidableCoordinateType != _CoordinateType.left
+                              ? _backupTestData[index][1]
+                              : testData[index].data[1],
+                        ]);
 
-                      if (slidableCoordinateType == null) {
-                        setState(() => result = testData[index]
-                            .data
-                            .singleWhere((options) =>
-                                options.type == slidableCoordinateType)
-                            .values
-                            .join(','));
-                      }
-                    },
-                    child: Text(
-                      'Reset',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                    if (slidableCoordinateType == null) {
+                      setState(() => result = testData[index]
+                          .data
+                          .singleWhere((options) =>
+                              options.type == slidableCoordinateType)
+                          .values
+                          .join(','));
+                    }
+                  },
+                  child: Text(
+                    'Reset',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                  ElevatedButton(
-                    onPressed: () {
-                      if (slidableCoordinateType == null) {
-                        setState(() => result = 'No Slidable Coordinates');
-                      } else {
-                        setState(() => result = testData[index]
-                            .data
-                            .singleWhere((options) =>
-                                options.type == slidableCoordinateType)
-                            .values
-                            .join(','));
-                      }
-                    },
-                    child: Text(
-                      'Get Current Data',
-                      style: Theme.of(context).textTheme.labelLarge!.copyWith(
-                            color: Colors.white,
-                          ),
-                    ),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (slidableCoordinateType == null) {
+                      setState(() => result = 'No Slidable Coordinates');
+                    } else {
+                      setState(() => result = testData[index]
+                          .data
+                          .singleWhere((options) =>
+                              options.type == slidableCoordinateType)
+                          .values
+                          .join(','));
+                    }
+                  },
+                  child: Text(
+                    'Get Current Data',
+                    style: Theme.of(context).textTheme.labelLarge!,
                   ),
-                ],
-              )
-            ],
-          );
-        }),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            setState(() => isDarkMode = !isDarkMode);
-          },
-          child: Icon(isDarkMode ? Icons.light_mode : Icons.dark_mode),
+                ),
+              ],
+            )
+          ],
+        );
+      }),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          widget.switchThemeFn();
+        },
+        child: Icon(
+          Theme.of(context).brightness == Brightness.dark
+              ? Icons.light_mode
+              : Icons.dark_mode,
         ),
       ),
     );
