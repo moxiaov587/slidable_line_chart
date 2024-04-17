@@ -37,6 +37,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     required this.getYAxisTickLineHeight,
     required this.maxOffsetValueOnYAxisSlidingArea,
     required this.slidableLineChartThemeData,
+    required this.triggerClear,
   }) : super(
           repaint: Listenable.merge(
             <AnimationController?>[
@@ -96,6 +97,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
   /// {@macro package.SlidableLineChartThemeData}
   final SlidableLineChartThemeData<E>? slidableLineChartThemeData;
+
+  /// {@macro package.SlidableLineChartState._triggerClear}
+  final bool triggerClear;
 
   final TextPainter _textPainter =
       TextPainter(textDirection: TextDirection.ltr);
@@ -248,8 +252,12 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         items1.add(
           TweenSequenceItem<Rect?>(
             tween: RectTween(
-              begin: Rect.fromCircle(center: coordinate.offset, radius: 0),
-              end: coordinate.rect,
+              begin: triggerClear
+                  ? coordinate.rect
+                  : Rect.fromCircle(center: coordinate.offset, radius: 0),
+              end: triggerClear
+                  ? Rect.fromCircle(center: coordinate.offset, radius: 0)
+                  : coordinate.rect,
             ),
             weight: weight,
           ),
@@ -259,8 +267,12 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           items2.add(
             TweenSequenceItem<Rect?>(
               tween: RectTween(
-                begin: Rect.fromCircle(center: coordinate.offset, radius: 0),
-                end: coordinate.zoomedRect,
+                begin: triggerClear
+                    ? coordinate.zoomedRect
+                    : Rect.fromCircle(center: coordinate.offset, radius: 0),
+                end: triggerClear
+                    ? Rect.fromCircle(center: coordinate.offset, radius: 0)
+                    : coordinate.zoomedRect,
               ),
               weight: weight,
             ),
@@ -285,7 +297,24 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final Coordinate coordinate = values[index];
 
       if (animationController == null ||
-          (index != values.length - 1 && renderIndex > index)) {
+          (!triggerClear &&
+              index != values.length - 1 &&
+              renderIndex > index)) {
+        canvas.drawOval(
+          coordinate.rect,
+          _coordinatePointPaint..color = finalCoordinatePointColor,
+        );
+
+        if (finalTapAreaColor != null &&
+            (slidableLineChartThemeData?.showTapArea ?? kShowTapArea)) {
+          canvas.drawOval(
+            coordinate.zoomedRect,
+            _tapAreaPaint..color = finalTapAreaColor,
+          );
+        }
+      }
+
+      if (triggerClear && index != 0 && renderIndex < index) {
         canvas.drawOval(
           coordinate.rect,
           _coordinatePointPaint..color = finalCoordinatePointColor,
@@ -469,18 +498,43 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       final double progress =
           pathMetric.length * (animationController?.value ?? 1);
 
-      final Path path = pathMetric.extractPath(0.0, progress);
-
-      canvas.drawPath(path, _linePaint..color = lineColor);
-
       final Tangent? tangent = pathMetric.getTangentForOffset(progress);
 
-      final Path fillAreaPath = Path()
-        ..moveTo(first.dx, _chartActualHeight)
-        ..addPath(path, Offset.zero)
-        ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
-        ..lineTo(first.dx, _chartActualHeight)
-        ..close();
+      final Path fillAreaPath;
+
+      if (triggerClear) {
+        final Path path = pathMetric.extractPath(
+          0,
+          pathMetric.length - progress,
+        );
+
+        final Path remaining =
+            pathMetric.extractPath(progress, pathMetric.length);
+
+        canvas
+          ..drawPath(
+            path,
+            _linePaint..color = lineColor.withOpacity(0),
+          )
+          ..drawPath(
+            remaining,
+            _linePaint..color = lineColor,
+          );
+
+        fillAreaPath = Path.from(remaining)
+          ..lineTo(values.last.offset.dx, _chartActualHeight)
+          ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
+          ..close();
+      } else {
+        final Path path = pathMetric.extractPath(0, progress);
+
+        canvas.drawPath(path, _linePaint..color = lineColor);
+
+        fillAreaPath = Path.from(path)
+          ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
+          ..lineTo(first.dx, _chartActualHeight)
+          ..close();
+      }
 
       canvas.drawPath(
         fillAreaPath,

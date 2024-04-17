@@ -436,6 +436,32 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     }
   }
 
+  /// {@template package.SlidableLineChartState._triggerClear}
+  /// The flag that triggers the cleanup animation.
+  ///
+  /// When [_triggerClear] is set to true, the reset animation controller will
+  /// trigger an animation opposite to the initialization animation. After the
+  /// reset animation is completed, the value will be reset to false.
+  /// {@endtemplate}
+  bool _triggerClear = false;
+
+  /// Clear all chart elements with animation.
+  ///
+  /// You can use this method to clean the elements and then update the data.
+  Future<void> clearChart() async {
+    if (!widget.enableInitializationAnimation) {
+      return;
+    }
+
+    setState(() => _triggerClear = true);
+    _slidableCoordsAnimationCtrl?.reset();
+    _otherCoordsAnimationCtrl?.reset();
+    await Future<void>.delayed(
+      widget.initializationAnimationDuration,
+      () => setState(() => _triggerClear = false),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -689,6 +715,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
                   maxOffsetValueOnYAxisSlidingArea,
               slidableLineChartThemeData:
                   SlidableLineChartTheme.maybeOf<E>(context),
+              triggerClear: _triggerClear,
             ),
           );
 
