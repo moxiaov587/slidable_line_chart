@@ -126,7 +126,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   /// {@template package.SlidableLineChart.divisions}
   /// The division value of y-axis.
   ///
-  /// Defaults to 1. Must be less than or equal to 0.
+  /// Defaults to 1. Must be larger than 0 and less than ([max] - [min]).
   ///
   /// Generate [SlidableLineChartState._yAxis] from this value and
   /// [min], [max].
