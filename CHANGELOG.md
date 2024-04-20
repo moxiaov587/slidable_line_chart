@@ -1,3 +1,9 @@
+## 1.2.0
+
+- Add reverse initialization animation to clean up the chart.
+- Add `clearChart` example.
+- Fix a comment issue.
+
 ## 1.1.1
 
 - Add `enableFeedback` parameter.
