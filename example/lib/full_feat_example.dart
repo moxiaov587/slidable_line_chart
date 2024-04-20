@@ -337,6 +337,23 @@ class _FullFeatExampleState extends State<FullFeatExample> {
                     style: Theme.of(context).textTheme.labelLarge!,
                   ),
                 ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await _slidableLineChartState?.clearChart();
+                    _slidableLineChartState?.resetAnimationController();
+                    setState(
+                      () => testData[index].data = TestData(
+                        min: min,
+                        max: max,
+                        divisions: divisions,
+                      ).data,
+                    );
+                  },
+                  child: Text(
+                    'Clear Chat And Update Data',
+                    style: Theme.of(context).textTheme.labelLarge!,
+                  ),
+                ),
               ],
             )
           ],
