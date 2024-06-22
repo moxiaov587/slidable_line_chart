@@ -2,6 +2,7 @@
 library slidable_line_chart;
 
 import 'dart:async' show unawaited;
+import 'dart:math' as math show max;
 
 import 'package:collection/collection.dart' show IterableExtension;
 import 'package:flutter/material.dart';
@@ -12,6 +13,13 @@ import 'theme/slidable_line_chart_theme.dart';
 
 export 'model/coordinates_options.dart' show CoordinatesOptions;
 export 'theme/slidable_line_chart_theme.dart';
+
+/// Coordinate system origin by default.
+const Offset kDefaultCoordinateSystemOrigin = Offset(6.0, 6.0);
+
+/// Chart initialization animation duration by default.
+const Duration kDefaultInitializationAnimationDuration =
+    Duration(milliseconds: 1200);
 
 /// A slidable line chart.
 class SlidableLineChart<E extends Enum> extends StatefulWidget {
@@ -39,13 +47,14 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
     required this.xAxis,
     required this.min,
     required this.max,
-    this.coordinateSystemOrigin = const Offset(6.0, 6.0),
+    this.coordinateSystemOrigin = kDefaultCoordinateSystemOrigin,
     this.divisions = 1,
     this.slidePrecision,
     this.reversed = false,
     this.onlyRenderEvenAxisLabel = true,
     this.enableInitializationAnimation = true,
-    this.initializationAnimationDuration = const Duration(milliseconds: 1200),
+    this.initializationAnimationDuration =
+        kDefaultInitializationAnimationDuration,
     this.enableFeedback = true,
     this.onDrawCheckOrClose,
     this.onChange,
@@ -462,6 +471,40 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     );
   }
 
+  /// The maximum zoomed radius in the current
+  /// [SlidableLineChart.coordinatesOptionsList].
+  late double _maxZoomedRadius;
+
+  /// {@template package.SlidableLineChartState._positionPadding}
+  /// To ensure that the tap area of ​​the coordinate point can respond to touch
+  /// events even when it is at the edge, the chart itself should be padded
+  /// inwards with the maximum value of the zoomed radius and the
+  /// [SlidableLineChart.coordinateSystemOrigin].
+  ///
+  /// See [_generatePositionPadding].
+  /// {@endtemplate}
+  late EdgeInsets _positionPadding;
+
+  double _getMaxZoomedRadius(List<CoordinatesOptions<E>> list) =>
+      list.fold<double>(
+        0,
+        (double value, CoordinatesOptions<E> coordinatesOptions) => math.max(
+          value,
+          coordinatesOptions.radius * coordinatesOptions.zoomedFactor,
+        ),
+      );
+
+  void _generatePositionPadding() {
+    _maxZoomedRadius = _getMaxZoomedRadius(
+      widget.coordinatesOptionsList,
+    );
+
+    _positionPadding = EdgeInsets.symmetric(
+      horizontal: math.max(_maxZoomedRadius, widget.coordinateSystemOrigin.dx),
+      vertical: math.max(_maxZoomedRadius, widget.coordinateSystemOrigin.dy),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -471,6 +514,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     }
 
     _generateYAxis();
+    _generatePositionPadding();
   }
 
   @override
@@ -502,6 +546,12 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
         _otherCoordsAnimationCtrl?.dispose();
         _otherCoordsAnimationCtrl = null;
       }
+    }
+
+    if (_maxZoomedRadius !=
+            _getMaxZoomedRadius(widget.coordinatesOptionsList) ||
+        oldWidget.coordinateSystemOrigin != widget.coordinateSystemOrigin) {
+      _generatePositionPadding();
     }
   }
 
@@ -596,7 +646,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     final double dyLogicRowsNumberOnSlidingArea = _keepBoundsRoundToDouble(
       _minLogicRowsNumberOnSlidingArea,
       _maxLogicRowsNumberOnSlidingArea,
-      value: (dy.clamp(
+      value: ((dy - _positionPadding.bottom).clamp(
                 minOffsetValueForSlidingAreaOnYAxis,
                 maxOffsetValueForSlidingAreaOnYAxis,
               ) /
@@ -605,7 +655,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
           (_maxLogicRowsNumberOnSlidingArea - _minLogicRowsNumberOnSlidingArea),
     );
 
-    late double result;
+    double result;
 
     if (widget.reversed) {
       result = dyLogicRowsNumberOnSlidingArea * slidePrecision + widget.min;
@@ -638,14 +688,17 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
           final double chartWidth = constraints.maxWidth;
           final double chartHeight = constraints.maxHeight;
 
-          if (chartWidth == 0.0 || chartHeight == 0.0) {
+          final double chartActualWidth =
+              chartWidth - _positionPadding.horizontal;
+          final double chartActualHeight =
+              chartHeight - _positionPadding.vertical;
+
+          if (chartActualWidth <= 0.0 || chartActualHeight <= 0.0) {
             return const SizedBox.shrink();
           }
 
-          final double xAxisTickLineWidth = _getXAxisTickLineWidth(chartWidth);
-
-          final double chartActualHeight =
-              chartHeight - widget.coordinateSystemOrigin.dy;
+          final double xAxisTickLineWidth =
+              _getXAxisTickLineWidth(chartActualWidth);
 
           final double yAxisDisplayValue2OffsetValueFactor =
               _getYAxisDisplayValue2OffsetValueFactor(chartActualHeight);
@@ -661,13 +714,14 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
                         value: value,
                         offset: Offset(
                           xAxisTickLineWidth * (index + 0.5) +
-                              widget.coordinateSystemOrigin.dx,
+                              _positionPadding.left,
                           _displayValue2YAxisOffsetValue(
-                            value,
-                            chartActualHeight: chartActualHeight,
-                            yAxisDisplayValue2OffsetValueFactor:
-                                yAxisDisplayValue2OffsetValueFactor,
-                          ),
+                                value,
+                                chartActualHeight: chartActualHeight,
+                                yAxisDisplayValue2OffsetValueFactor:
+                                    yAxisDisplayValue2OffsetValueFactor,
+                              ) +
+                              _positionPadding.bottom,
                         ),
                         radius: options.radius,
                         zoomedFactor: options.zoomedFactor,
@@ -679,8 +733,8 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
 
           _forwardAnimationControllerWhenIsDismissed();
 
-          late double minOffsetValueOnYAxisSlidingArea;
-          late double maxOffsetValueOnYAxisSlidingArea;
+          double minOffsetValueOnYAxisSlidingArea;
+          double maxOffsetValueOnYAxisSlidingArea;
 
           if (widget.reversed) {
             minOffsetValueOnYAxisSlidingArea = 0.0;
@@ -699,6 +753,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
               slidableCoordinateType: widget.slidableCoordinateType,
               xAxis: widget.xAxis,
               coordinateSystemOrigin: widget.coordinateSystemOrigin,
+              positionPadding: _positionPadding,
               min: widget.min,
               max: widget.max,
               divisions: widget.divisions,

@@ -1,3 +1,9 @@
+## 1.3.0
+
+- Fix the issue of being unable to respond to touch events when the coordinate point touch area overflows.
+- **BREAKING CHANGE**
+  - Since the touch area is repaired by filling inward, this update may affect the original chart style. Please check and confirm after the update.
+
 ## 1.2.0
 
 - Add reverse initialization animation to clean up the chart.
