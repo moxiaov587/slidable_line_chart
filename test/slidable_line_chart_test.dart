@@ -1,16 +1,15 @@
-import 'dart:math';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:slidable_line_chart/model/coordinates_options.dart';
 import 'package:slidable_line_chart/slidable_line_chart.dart';
 
 enum CoordinateType {
   left,
   right,
 }
-
-const Duration kInitializationAnimationDuration = Duration(milliseconds: 1200);
 
 void main() {
   testWidgets(
@@ -21,7 +20,20 @@ void main() {
 
       const double width = 300.0;
       const double height = 300.0;
-      const double actualHeight = 300.0 - 6.0;
+      final EdgeInsets positionPadding = EdgeInsets.symmetric(
+        horizontal: math.max(
+          kDefaultCoordinatesOptionsRadius *
+              kDefaultCoordinatesOptionsZoomedFactor,
+          kDefaultCoordinateSystemOrigin.dx,
+        ),
+        vertical: math.max(
+          kDefaultCoordinatesOptionsRadius *
+              kDefaultCoordinatesOptionsZoomedFactor,
+          kDefaultCoordinateSystemOrigin.dy,
+        ),
+      );
+      final double actualWidth = width - positionPadding.horizontal;
+      final double actualHeight = height - positionPadding.vertical;
 
       const List<String> xAxis = <String>['500', '1k', '2k', '4k', '6k', '8k'];
       const int min = -37;
@@ -105,13 +117,15 @@ void main() {
 
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(kInitializationAnimationDuration);
+      await tester.pump(kDefaultInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
 
-      final Offset firstCoordinateOffsetByCalculation =
-          Offset(width / 2 / xAxis.length + 6.0, actualHeight);
+      final Offset firstCoordinateOffsetByCalculation = Offset(
+        actualWidth / 2 / xAxis.length + positionPadding.left,
+        actualHeight + positionPadding.bottom,
+      );
 
       final Offset firstCoordinateOffsetByMap =
           key.currentState!.coordinatesMap.values.single.value.first.offset;
@@ -135,12 +149,12 @@ void main() {
 
       // Move up 20.
       double moveDistance = 20;
-      totalMoveDistance += moveDistance;
-      int unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      int unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.single.values.first,
         equals(min + unitNum * slidePrecision),
@@ -148,12 +162,12 @@ void main() {
 
       // Move up 40 more.
       moveDistance = 40;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.single.values.first,
         equals(min + unitNum * slidePrecision),
@@ -161,12 +175,12 @@ void main() {
 
       // Move up to out of bounds.
       moveDistance = 300;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(options.single.values.first, equals(max));
 
       await gesture.up();
@@ -176,7 +190,7 @@ void main() {
       await tester.pump();
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(kInitializationAnimationDuration);
+      await tester.pump(kDefaultInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
@@ -191,13 +205,15 @@ void main() {
       );
 
       // Pick a random one of the remaining coordinates.
-      final int randomIndex = Random().nextInt(xAxis.length - 1) + 1;
+      final int randomIndex = math.Random().nextInt(xAxis.length - 1) + 1;
       final double maxOffsetValueOnYAxisSlidingArea =
           (1 - key.currentState!.percentDerivedArea) * actualHeight;
 
       final Offset randomCoordinateOffsetByCalculation = Offset(
-        width / 2 / xAxis.length + randomIndex * width / xAxis.length + 6.0,
-        maxOffsetValueOnYAxisSlidingArea,
+        actualWidth / 2 / xAxis.length +
+            randomIndex * actualWidth / xAxis.length +
+            positionPadding.left,
+        maxOffsetValueOnYAxisSlidingArea + positionPadding.bottom,
       );
 
       final Offset randomCoordinateOffsetByMap = key
@@ -225,12 +241,12 @@ void main() {
 
       // Move up 23.
       moveDistance = 23;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.single.values[randomIndex],
         equals(
@@ -240,12 +256,12 @@ void main() {
 
       // Move up 46.
       moveDistance = 46;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.single.values[randomIndex],
         equals(
@@ -255,12 +271,12 @@ void main() {
 
       // Move up to out of bounds.
       moveDistance = 300;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(options.single.values[randomIndex], equals(min));
 
       await gesture.up();
@@ -276,7 +292,20 @@ void main() {
 
       const double width = 300.0;
       const double height = 300.0;
-      const double actualHeight = 300.0 - 6.0;
+      final EdgeInsets positionPadding = EdgeInsets.symmetric(
+        horizontal: math.max(
+          kDefaultCoordinatesOptionsRadius *
+              kDefaultCoordinatesOptionsZoomedFactor,
+          kDefaultCoordinateSystemOrigin.dx,
+        ),
+        vertical: math.max(
+          kDefaultCoordinatesOptionsRadius *
+              kDefaultCoordinatesOptionsZoomedFactor,
+          kDefaultCoordinateSystemOrigin.dy,
+        ),
+      );
+      final double actualWidth = width - positionPadding.horizontal;
+      final double actualHeight = height - positionPadding.vertical;
 
       const List<String> xAxis = <String>['500', '1k', '2k', '4k', '6k', '8k'];
       const int min = -12;
@@ -352,13 +381,15 @@ void main() {
 
       // Starts animation.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(2));
-      await tester.pump(kInitializationAnimationDuration);
+      await tester.pump(kDefaultInitializationAnimationDuration);
       await tester.pump(const Duration(milliseconds: 10));
       // Animation complete.
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
 
-      Offset firstCoordinateOffsetByCalculation =
-          Offset(width / 2 / xAxis.length + 6.0, actualHeight);
+      Offset firstCoordinateOffsetByCalculation = Offset(
+        actualWidth / 2 / xAxis.length + positionPadding.left,
+        actualHeight + positionPadding.bottom,
+      );
 
       Offset firstCoordinateOffsetByMap =
           key.currentState!.coordinatesMap.values.first.value.first.offset;
@@ -381,12 +412,12 @@ void main() {
 
       // Move up 20.
       double moveDistance = 20;
-      totalMoveDistance += moveDistance;
-      int unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      int unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.first.values.first,
         equals(min + unitNum * slidePrecision),
@@ -394,12 +425,12 @@ void main() {
 
       // Move up 40 more.
       moveDistance = 40;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.first.values.first,
         equals(min + unitNum * slidePrecision),
@@ -407,12 +438,12 @@ void main() {
 
       // Move up to out of bounds.
       moveDistance = 300;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, -moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(options.first.values.first, equals(max));
 
       await gesture.up();
@@ -425,13 +456,15 @@ void main() {
       expect(SchedulerBinding.instance.transientCallbackCount, equals(0));
 
       // Pick a random one of the remaining coordinates.
-      final int randomIndex = Random().nextInt(xAxis.length - 1) + 1;
+      final int randomIndex = math.Random().nextInt(xAxis.length - 1) + 1;
       final double maxOffsetValueOnYAxisSlidingArea =
           key.currentState!.percentDerivedArea * actualHeight;
 
       final Offset randomCoordinateOffsetByCalculation = Offset(
-        width / 2 / xAxis.length + randomIndex * width / xAxis.length + 6.0,
-        maxOffsetValueOnYAxisSlidingArea,
+        actualWidth / 2 / xAxis.length +
+            randomIndex * actualWidth / xAxis.length +
+            positionPadding.left,
+        maxOffsetValueOnYAxisSlidingArea + positionPadding.bottom,
       );
 
       final Offset randomCoordinateOffsetByMap = key
@@ -453,12 +486,12 @@ void main() {
 
       // Move down 23.
       moveDistance = 23;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.last.values[randomIndex],
         equals(max - unitNum * slidePrecision),
@@ -466,12 +499,12 @@ void main() {
 
       // Move down 46 more.
       moveDistance = 46;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.last.values[randomIndex],
         equals(max - unitNum * slidePrecision),
@@ -479,12 +512,12 @@ void main() {
 
       // Move down to out of bounds.
       moveDistance = 300;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(options.last.values[randomIndex], equals(min));
 
       await gesture.up();
@@ -499,7 +532,7 @@ void main() {
       // After move.
       firstCoordinateOffsetByCalculation = Offset(
         firstCoordinateOffsetByCalculation.dx,
-        maxOffsetValueOnYAxisSlidingArea,
+        maxOffsetValueOnYAxisSlidingArea + positionPadding.bottom,
       );
 
       firstCoordinateOffsetByMap =
@@ -527,12 +560,12 @@ void main() {
 
       // Move down 17.
       moveDistance = 17;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.first.values.first,
         equals(max - unitNum * slidePrecision),
@@ -540,12 +573,12 @@ void main() {
 
       // Move down 39 more.
       moveDistance = 39;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(
         options.first.values.first,
         equals(max - unitNum * slidePrecision),
@@ -553,12 +586,12 @@ void main() {
 
       // Move down to out of bounds.
       moveDistance = 300;
-      totalMoveDistance += moveDistance;
-      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       await gesture.moveBy(
         Offset(0.0, moveDistance),
         timeStamp: const Duration(milliseconds: 100),
       );
+      totalMoveDistance += moveDistance;
+      unitNum = (totalMoveDistance / minSlideUnitOffset).round();
       expect(options.first.values.first, equals(min));
 
       await gesture.up();
