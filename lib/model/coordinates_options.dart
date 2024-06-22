@@ -5,6 +5,12 @@ import '../slidable_line_chart.dart' show SlidableLineChart;
 part 'coordinate.dart';
 part 'coordinates.dart';
 
+/// Coordinates options radius by default.
+const double kDefaultCoordinatesOptionsRadius = 6.0;
+
+/// Coordinates options zoomed factor by default.
+const double kDefaultCoordinatesOptionsZoomedFactor = 3.0;
+
 /// Define a configuration for a set of coordinate points.
 @immutable
 class CoordinatesOptions<E extends Enum> {
@@ -12,8 +18,8 @@ class CoordinatesOptions<E extends Enum> {
   const CoordinatesOptions(
     this.type, {
     required this.values,
-    this.radius = 6.0,
-    this.zoomedFactor = 3.0,
+    this.radius = kDefaultCoordinatesOptionsRadius,
+    this.zoomedFactor = kDefaultCoordinatesOptionsZoomedFactor,
   });
 
   /// Type of coordinates options.

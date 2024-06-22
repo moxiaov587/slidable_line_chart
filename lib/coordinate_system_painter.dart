@@ -23,6 +23,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     required this.slidableCoordinateType,
     required this.xAxis,
     required this.coordinateSystemOrigin,
+    required this.positionPadding,
     required this.min,
     required this.max,
     required this.divisions,
@@ -55,6 +56,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
   /// {@macro package.SlidableLineChart.coordinateSystemOrigin}
   final Offset coordinateSystemOrigin;
+
+  /// {@macro package.SlidableLineChartState._positionPadding}
+  final EdgeInsets positionPadding;
 
   /// {@macro package.SlidableLineChart.min}
   final int min;
@@ -135,16 +139,22 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     _chartWidth = size.width;
     _chartHeight = size.height;
 
-    _chartActualWidth = _chartWidth - coordinateSystemOrigin.dx;
-    _chartActualHeight = _chartHeight - coordinateSystemOrigin.dy;
+    _chartActualWidth = _chartWidth - positionPadding.horizontal;
+    _chartActualHeight = _chartHeight - positionPadding.vertical;
 
     final Path axisLinePath = Path()
       // X-Axis
-      ..moveTo(0.0, _chartActualHeight)
-      ..relativeLineTo(_chartWidth, 0.0)
+      ..moveTo(
+        positionPadding.left - coordinateSystemOrigin.dx,
+        _chartActualHeight + positionPadding.bottom,
+      )
+      ..relativeLineTo(_chartActualWidth + coordinateSystemOrigin.dx, 0.0)
       // Y-Axis
-      ..moveTo(coordinateSystemOrigin.dx, 0.0)
-      ..relativeLineTo(0.0, _chartHeight);
+      ..moveTo(
+        positionPadding.right,
+        positionPadding.top,
+      )
+      ..relativeLineTo(0.0, _chartActualHeight + coordinateSystemOrigin.dy);
     canvas.drawPath(axisLinePath, _axisLinePaint);
 
     final double xAxisTickLineWidth = getXAxisTickLineWidth(_chartActualWidth);
@@ -522,8 +532,14 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           );
 
         fillAreaPath = Path.from(remaining)
-          ..lineTo(values.last.offset.dx, _chartActualHeight)
-          ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
+          ..lineTo(
+            values.last.offset.dx,
+            _chartActualHeight + positionPadding.bottom,
+          )
+          ..lineTo(
+            tangent?.position.dx ?? 0.0,
+            _chartActualHeight + positionPadding.bottom,
+          )
           ..close();
       } else {
         final Path path = pathMetric.extractPath(0, progress);
@@ -531,8 +547,11 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         canvas.drawPath(path, _linePaint..color = lineColor);
 
         fillAreaPath = Path.from(path)
-          ..lineTo(tangent?.position.dx ?? 0.0, _chartActualHeight)
-          ..lineTo(first.dx, _chartActualHeight)
+          ..lineTo(
+            tangent?.position.dx ?? 0.0,
+            _chartActualHeight + positionPadding.bottom,
+          )
+          ..lineTo(first.dx, _chartActualHeight + positionPadding.bottom)
           ..close();
       }
 
@@ -565,7 +584,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     canvas
       ..save()
       ..translate(
-        xAxisTickLineWidth / 2 + coordinateSystemOrigin.dx,
+        xAxisTickLineWidth / 2 + positionPadding.left,
         _chartHeight,
       );
 
@@ -590,8 +609,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         getYAxisTickLineHeight(_chartActualHeight);
 
     canvas.translate(
-      coordinateSystemOrigin.dx,
-      _chartActualHeight,
+      positionPadding.right,
+      _chartActualHeight + positionPadding.bottom,
     );
 
     // The first line has an axis, so only text is drawn.
@@ -646,7 +665,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       dx = 0.0;
       dy = size.height / 2;
     } else {
-      dx = size.width + coordinateSystemOrigin.dx;
+      dx = size.width + positionPadding.right;
       dy = 0.0;
     }
 
