@@ -55,6 +55,7 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
     this.enableInitializationAnimation = true,
     this.initializationAnimationDuration =
         kDefaultInitializationAnimationDuration,
+    this.fillWidth = false,
     this.enableFeedback = true,
     this.onDrawCheckOrClose,
     this.onChange,
@@ -69,6 +70,10 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
         assert(
           slidePrecision == null || (slidePrecision * 100) % 1 == 0,
           'slidePrecision($slidePrecision) must be a multiple of 0.01',
+        ),
+        assert(
+          fillWidth == false || (fillWidth && onChange == null),
+          'fillWidth($fillWidth) can only be set to true if onChange is null.',
         ),
         super(key: key);
 
@@ -180,6 +185,13 @@ class SlidableLineChart<E extends Enum> extends StatefulWidget {
   ///
   /// Defaults to Duration(seconds: 1).
   final Duration initializationAnimationDuration;
+
+  /// {@template package.SlidableLineChart.fillWidth}
+  /// Align the first and last points of the chart with both ends.
+  ///
+  /// Can only be set to true if [onChange] is null.
+  /// {@endtemplate}
+  final bool fillWidth;
 
   /// Whether audible and/or haptic feedback should be provided during user
   /// interaction.
@@ -571,7 +583,8 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
   /// This value divided by 2 is dx for the coordinate offset.
   /// {@endtemplate}
   double _getXAxisTickLineWidth(double chartActualWidth) =>
-      chartActualWidth / widget.xAxis.length;
+      chartActualWidth /
+      (widget.fillWidth ? widget.xAxis.length - 1 : widget.xAxis.length);
 
   /// Get the conversion factor from the Y-axis display value to the offset
   /// value.
@@ -713,7 +726,8 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
                       (int index, double value) => Coordinate(
                         value: value,
                         offset: Offset(
-                          xAxisTickLineWidth * (index + 0.5) +
+                          xAxisTickLineWidth *
+                                  (index + (widget.fillWidth ? 0 : 0.5)) +
                               _positionPadding.left,
                           _displayValue2YAxisOffsetValue(
                                 value,
@@ -746,6 +760,9 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
             maxOffsetValueOnYAxisSlidingArea = chartActualHeight;
           }
 
+          final SlidableLineChartThemeData<E>? theme =
+              SlidableLineChartTheme.maybeOf<E>(context);
+
           final Widget coordinateSystemPainter = CustomPaint(
             size: Size(chartWidth, chartHeight),
             isComplex: true,
@@ -759,6 +776,7 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
               divisions: widget.divisions,
               reversed: widget.reversed,
               onlyRenderEvenAxisLabel: widget.onlyRenderEvenAxisLabel,
+              fillWidth: widget.fillWidth,
               onDrawCheckOrClose: widget.onDrawCheckOrClose,
               yAxis: _yAxis,
               slidableCoordsAnimationCtrl: _slidableCoordsAnimationCtrl,
@@ -768,14 +786,18 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
               getYAxisTickLineHeight: _getYAxisTickLineHeight,
               maxOffsetValueOnYAxisSlidingArea:
                   maxOffsetValueOnYAxisSlidingArea,
-              slidableLineChartThemeData:
-                  SlidableLineChartTheme.maybeOf<E>(context),
+              slidableLineChartThemeData: theme,
               triggerClear: _triggerClear,
             ),
           );
 
           if (widget.onChange == null) {
-            return Opacity(opacity: 0.6, child: coordinateSystemPainter);
+            final double opacity = theme?.disabledOpacity ?? kDisabledOpacity;
+
+            if (opacity == 1) {
+              return coordinateSystemPainter;
+            }
+            return Opacity(opacity: opacity, child: coordinateSystemPainter);
           }
 
           if (_slidableCoordinates == null) {

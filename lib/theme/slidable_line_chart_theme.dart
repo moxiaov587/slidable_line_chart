@@ -68,6 +68,49 @@ const Color kCloseColor = Colors.white;
 /// Smoothness by default.
 const double kSmooth = 0.0;
 
+/// Opacity by default.
+const double kDisabledOpacity = 0.6;
+
+/// The default type of grid lines to draw.
+const DrawGridLineType kDrawGridLineType = DrawGridLineType.onlyXAxis;
+
+/// The default style of grid lines to draw.
+const DrawGridLineStyle kDrawGridLineStyle = DrawGridLineStyle.normal;
+
+/// The default unit width of the dashed grid lines.
+const double kDashedGridLineWidth = 4.0;
+
+/// The default gap width of the dashed grid lines.
+const double kDashedGridLineGap = 2.0;
+
+/// {@template package.DrawGridLineType}
+/// The type of grid lines to draw.
+/// {@endtemplate}
+enum DrawGridLineType {
+  /// Both the x-axis and y-axis grid lines should be drawn.
+  all,
+
+  /// Draw grid lines only on the x-axis.
+  onlyXAxis,
+
+  /// Draw grid lines only on the y-axis.
+  onlyYAxis,
+
+  /// Do not draw grid lines on the x-axis or y-axis.
+  none,
+}
+
+/// {@template package.DrawGridLineStyle}
+/// The style of grid lines to draw.
+/// {@endtemplate}
+enum DrawGridLineStyle {
+  /// Draw to straight line.
+  normal,
+
+  /// Draw to dashed line.
+  dashed,
+}
+
 /// {@template package.SlidableLineChartThemeData}
 /// Defines the configuration of the overall visual [SlidableLineChartThemeData]
 /// for a [SlidableLineChart].
@@ -83,6 +126,10 @@ class SlidableLineChartThemeData<E extends Enum> {
     this.axisLineWidth,
     this.gridLineColor,
     this.gridLineWidth,
+    this.drawGridLineType,
+    this.drawGridLineStyle,
+    this.dashedGridLineWidth,
+    this.dashedGridLineGap,
     this.showTapArea,
     this.lineWidth,
     this.displayValueTextStyle,
@@ -94,9 +141,15 @@ class SlidableLineChartThemeData<E extends Enum> {
     this.checkColor,
     this.closeColor,
     this.smooth,
-  }) : assert(
+    this.disabledOpacity,
+  })  : assert(
           smooth == null || (smooth >= 0.0 && smooth <= 1.0),
           'smooth($smooth) must be between [0-1]',
+        ),
+        assert(
+          disabledOpacity == null ||
+              (disabledOpacity >= 0.0 && disabledOpacity <= 1.0),
+          'disabledOpacity($disabledOpacity) must be between [0-1]',
         );
 
   /// All coordinates style list.
@@ -130,6 +183,32 @@ class SlidableLineChartThemeData<E extends Enum> {
   ///
   /// If this value are null, then [kGridLineWidth] will be used.
   final double? gridLineWidth;
+
+  /// {@macro package.DrawGridLineType}
+  ///
+  /// If this value are null, then [kDrawGridLineType] will be used.
+  final DrawGridLineType? drawGridLineType;
+
+  /// {@macro package.DrawGridLineStyle}
+  ///
+  /// If this value are null, then [kDrawGridLineStyle] will be used.
+  final DrawGridLineStyle? drawGridLineStyle;
+
+  /// The unit width of the dashed grid lines.
+  ///
+  /// Only works when [drawGridLineStyle] is equal to
+  /// [DrawGridLineStyle.dashed].
+  ///
+  /// If this value are null, then [kDashedGridLineWidth] will be used.
+  final double? dashedGridLineWidth;
+
+  /// The gap width of the dashed grid lines.
+  ///
+  /// Only works when [drawGridLineStyle] is equal to
+  /// [DrawGridLineStyle.dashed].
+  ///
+  /// If this value are null, then [kDashedGridLineGap] will be used.
+  final double? dashedGridLineGap;
 
   /// Whether to display the user's touch area.
   ///
@@ -190,6 +269,13 @@ class SlidableLineChartThemeData<E extends Enum> {
   /// If this value are null, then [kSmooth] will be used.
   final double? smooth;
 
+  /// Opacity when line chart is can't change.
+  ///
+  /// Value range is [0-1], smaller means closer to the polyline.
+  ///
+  /// If this value are null, then [kDisabledOpacity] will be used.
+  final double? disabledOpacity;
+
   /// Generate a [Map] from the current [coordinatesStyleList].
   ///
   /// Convenient and efficient access to the corresponding [E] of
@@ -203,6 +289,70 @@ class SlidableLineChartThemeData<E extends Enum> {
       for (final CoordinatesStyle<E> item in coordinatesStyleList!)
         item.type: item,
     };
+  }
+
+  /// Creates a copy of this theme data but with the given fields replaced with
+  /// the new values.
+  SlidableLineChartThemeData<E> copyWith({
+    List<CoordinatesStyle<E>>? coordinatesStyleList,
+    TextStyle? axisLabelStyle,
+    Color? axisLineColor,
+    double? axisLineWidth,
+    Color? gridLineColor,
+    double? gridLineWidth,
+    DrawGridLineType? drawGridLineType,
+    DrawGridLineStyle? drawGridLineStyle,
+    double? dashedGridLineWidth,
+    double? dashedGridLineGap,
+    bool? showTapArea,
+    double? lineWidth,
+    TextStyle? displayValueTextStyle,
+    double? displayValueMarginBottom,
+    double? indicatorMarginTop,
+    double? indicatorRadius,
+    Color? checkBackgroundColor,
+    Color? closeBackgroundColor,
+    Color? checkColor,
+    Color? closeColor,
+    double? smooth,
+    double? disabledOpacity,
+  }) {
+    assert(
+      smooth == null || (smooth >= 0.0 && smooth <= 1.0),
+      'smooth($smooth) must be between [0-1]',
+    );
+    assert(
+      disabledOpacity == null ||
+          (disabledOpacity >= 0.0 && disabledOpacity <= 1.0),
+      'disabledOpacity($disabledOpacity) must be between [0-1]',
+    );
+
+    return SlidableLineChartThemeData<E>(
+      coordinatesStyleList: coordinatesStyleList ?? this.coordinatesStyleList,
+      drawGridLineType: drawGridLineType ?? this.drawGridLineType,
+      drawGridLineStyle: drawGridLineStyle ?? this.drawGridLineStyle,
+      dashedGridLineWidth: dashedGridLineWidth ?? this.dashedGridLineWidth,
+      dashedGridLineGap: dashedGridLineGap ?? this.dashedGridLineGap,
+      axisLabelStyle: axisLabelStyle ?? this.axisLabelStyle,
+      axisLineColor: axisLineColor ?? this.axisLineColor,
+      axisLineWidth: axisLineWidth ?? this.axisLineWidth,
+      gridLineColor: gridLineColor ?? this.gridLineColor,
+      gridLineWidth: gridLineWidth ?? this.gridLineWidth,
+      showTapArea: showTapArea ?? this.showTapArea,
+      lineWidth: lineWidth ?? this.lineWidth,
+      displayValueTextStyle:
+          displayValueTextStyle ?? this.displayValueTextStyle,
+      displayValueMarginBottom:
+          displayValueMarginBottom ?? this.displayValueMarginBottom,
+      indicatorMarginTop: indicatorMarginTop ?? this.indicatorMarginTop,
+      indicatorRadius: indicatorRadius ?? this.indicatorRadius,
+      checkBackgroundColor: checkBackgroundColor ?? this.checkBackgroundColor,
+      closeBackgroundColor: closeBackgroundColor ?? this.closeBackgroundColor,
+      checkColor: checkColor ?? this.checkColor,
+      closeColor: closeColor ?? this.closeColor,
+      smooth: smooth ?? this.smooth,
+      disabledOpacity: disabledOpacity ?? this.disabledOpacity,
+    );
   }
 
   @override

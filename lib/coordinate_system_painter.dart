@@ -29,6 +29,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     required this.divisions,
     required this.reversed,
     required this.onlyRenderEvenAxisLabel,
+    required this.fillWidth,
     required this.onDrawCheckOrClose,
     required this.yAxis,
     required this.slidableCoordsAnimationCtrl,
@@ -74,6 +75,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
   /// {@macro package.SlidableLineChart.onlyRenderEvenAxisLabel}
   final bool onlyRenderEvenAxisLabel;
+
+  /// {@macro package.SlidableLineChart.fillWidth}
+  final bool fillWidth;
 
   /// {@macro package.SlidableLineChart.onDrawCheckOrClose}
   final OnDrawIndicator? onDrawCheckOrClose;
@@ -584,7 +588,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
     canvas
       ..save()
       ..translate(
-        xAxisTickLineWidth / 2 + positionPadding.left,
+        (fillWidth ? 0 : xAxisTickLineWidth / 2) + positionPadding.left,
         _chartHeight,
       );
 
@@ -595,6 +599,31 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         drawXAxis: true,
         alignment: Alignment.center,
       );
+
+      if (<DrawGridLineType>[
+        DrawGridLineType.all,
+        DrawGridLineType.onlyYAxis,
+      ].contains(
+        slidableLineChartThemeData?.drawGridLineType ?? kDrawGridLineType,
+      )) {
+        if (!fillWidth || (fillWidth && i != 0)) {
+          if (slidableLineChartThemeData?.drawGridLineStyle ==
+              DrawGridLineStyle.dashed) {
+            _drawDashedLine(
+              canvas,
+              Offset(0, -positionPadding.bottom),
+              Offset(0, -_chartHeight + positionPadding.bottom),
+              _gridLinePaint,
+            );
+          } else {
+            canvas.drawLine(
+              Offset(0, -positionPadding.bottom),
+              Offset(0, -_chartHeight + positionPadding.bottom),
+              _gridLinePaint,
+            );
+          }
+        }
+      }
 
       canvas.translate(xAxisTickLineWidth, 0);
     }
@@ -623,11 +652,28 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
 
     for (int i = 1; i < yAxis.length; i++) {
       // Drawing coordinate line.
-      canvas.drawLine(
-        Offset.zero,
-        Offset(_chartActualWidth, 0),
-        _gridLinePaint,
-      );
+      if (<DrawGridLineType>[
+        DrawGridLineType.all,
+        DrawGridLineType.onlyXAxis,
+      ].contains(
+        slidableLineChartThemeData?.drawGridLineType ?? kDrawGridLineType,
+      )) {
+        if (slidableLineChartThemeData?.drawGridLineStyle ==
+            DrawGridLineStyle.dashed) {
+          _drawDashedLine(
+            canvas,
+            Offset.zero,
+            Offset(_chartActualWidth, 0),
+            _gridLinePaint,
+          );
+        } else {
+          canvas.drawLine(
+            Offset.zero,
+            Offset(_chartActualWidth, 0),
+            _gridLinePaint,
+          );
+        }
+      }
 
       if (!onlyRenderEvenAxisLabel || (onlyRenderEvenAxisLabel && i.isEven)) {
         _drawAxisLabel(
@@ -639,6 +685,45 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
       canvas.translate(0.0, -yAxisTickLineHeight);
     }
     canvas.restore();
+  }
+
+  void _drawDashedLine(
+    Canvas canvas,
+    Offset p1,
+    Offset p2,
+    Paint paint,
+  ) {
+    final double dashWidth =
+        slidableLineChartThemeData?.dashedGridLineWidth ?? kDashedGridLineWidth;
+    final double dashGap =
+        slidableLineChartThemeData?.dashedGridLineGap ?? kDashedGridLineGap;
+
+    double dx = p2.dx - p1.dx;
+    double dy = p2.dy - p1.dy;
+
+    final double magnitude = math.sqrt(dx * dx + dy * dy);
+    dx = dx / magnitude;
+    dy = dy / magnitude;
+
+    final int steps = magnitude ~/ (dashWidth + dashGap);
+
+    double startX = p1.dx;
+    double startY = p1.dy;
+
+    double? endX;
+    double? endY;
+
+    for (int i = 0; i < steps; i++) {
+      endX = startX + dx * dashWidth;
+      endY = startY + dy * dashWidth;
+      canvas.drawLine(Offset(startX, startY), Offset(endX, endY), paint);
+      startX += dx * (dashWidth + dashGap);
+      startY += dy * (dashWidth + dashGap);
+    }
+
+    if (endX != null && endY != null && (endX < p2.dx || endY < p2.dy)) {
+      canvas.drawLine(Offset(startX, startY), p2, paint);
+    }
   }
 
   void _drawAxisLabel(
