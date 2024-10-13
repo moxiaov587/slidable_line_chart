@@ -50,6 +50,7 @@ Fields in `SlidableLineChart`:
 | onlyRenderEvenAxisLabel         | `bool`                            | Whether the y-axis label renders only even items.                                       | `true`                       |
 | enableInitializationAnimation   | `bool`                            | Whether the coordinate system triggers animation when initialized.                      | `true`                       |
 | initializationAnimationDuration | `Duration`                        | Initialize the duration of the animation.                                               | `const Duration(seconds: 1)` |
+| fillWidth                       | `bool`                            | Align the first and last points of the chart with both ends.                            | `false`                      |
 | enableFeedback                  | `bool`                            | Whether audible and/or haptic feedback should be provided during user interaction.      | `true`                       |
 | onDrawCheckOrClose              | `OnDrawCheckOrClose?`             | Called when the user slides coordinate, the return value determines the indicator type. | `null`                       |
 | onChange                        | `CoordinatesOptionsChanged<Enum>` | Called when the user slides coordinate.                                                 | `null`                       |
@@ -76,6 +77,10 @@ Fields in `SlidableLineChartThemeData`:
 | axisLineWidth               | `double?`                        | Axis line width for the coordinate system.                        | `null`        |
 | gridLineColor               | `Color?`                         | Grid line color for the coordinate system.                        | `null`        |
 | gridLineWidth               | `double?`                        | Grid line width for the coordinate system.                        | `null`        |
+| drawGridLineType            | `DrawGridLineType?`              | The type of grid lines to draw.                                   | `null`        |
+| drawGridLineStyle           | `DrawGridLineStyle?`             | The style of grid lines to draw.                                  | `null`        |
+| dashedGridLineWidth         | `double?`                        | The unit width of the dashed grid lines.                          | `null`        |
+| dashedGridLineGap           | `double?`                        | The gap width of the dashed grid lines.                           | `null`        |
 | showTapArea                 | `bool?`                          | Whether to display the user's touch area.                         | `null`        |
 | lineWidth                   | `double?`                        | Line width on the all coordinates.                                | `null`        |
 | displayValueTextStyle       | `TextStyle?`                     | Text style for display value on the coordinate system.            | `null`        |
@@ -87,3 +92,4 @@ Fields in `SlidableLineChartThemeData`:
 | checkColor                  | `Color?`                         | Color for check symbol on the coordinate system.                  | `null`        |
 | closeColor                  | `Color?`                         | Color for close symbol on the coordinate system.                  | `null`        |
 | smooth                      | `double?`                        | Smoothness of the line chart.                                     | `null`        |
+| disabledOpacity             | `double?`                        | Opacity when line chart is can't change.                          | `null`        |

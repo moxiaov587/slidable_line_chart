@@ -1,3 +1,9 @@
+## 1.4.0
+
+- Support custom disabled opacity.
+- Support align the first and last points of the chart with both ends when display mode.
+- Support drawing grid lines as dotted lines. Now the y-axis can also draw grid lines.
+
 ## 1.3.0
 
 - Fix the issue of being unable to respond to touch events when the coordinate point touch area overflows.
