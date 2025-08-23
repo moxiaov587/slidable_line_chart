@@ -133,15 +133,18 @@ class _FullFeatExampleState extends State<FullFeatExample> {
                         type: _CoordinateType.left,
                         pointColor: Theme.of(context).primaryColor,
                         lineColor: Theme.of(context).primaryColor,
-                        fillAreaColor:
-                            Theme.of(context).primaryColor.withOpacity(.5),
+                        fillAreaColor: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: 0.5),
                       ),
                       CoordinatesStyle<_CoordinateType>(
                         type: _CoordinateType.right,
                         pointColor: Theme.of(context).colorScheme.error,
                         lineColor: Theme.of(context).colorScheme.error,
-                        fillAreaColor:
-                            Theme.of(context).colorScheme.error.withOpacity(.5),
+                        fillAreaColor: Theme.of(context)
+                            .colorScheme
+                            .error
+                            .withValues(alpha: 0.5),
                       ),
                     ],
                     showTapArea: true,

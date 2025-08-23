@@ -195,8 +195,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         coordinates: coordinates,
         lineColor: coordinatesStyle?.lineColor ?? finalCoordinatePointColor,
         fillAreaColor: coordinatesStyle?.fillAreaColor ??
-            finalCoordinatePointColor
-                .withOpacity(0.5 * finalCoordinatePointColor.opacity),
+            finalCoordinatePointColor.withValues(
+              alpha: 0.5 * finalCoordinatePointColor.a,
+            ),
       );
 
       _drawCoordinates(
@@ -219,8 +220,8 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
           kColorPalette[slidableCoordinateType!.index % kColorPalette.length];
 
       final Color finalTapAreaColor = slidableCoordinatesStyle?.tapAreaColor ??
-          finalSlidableCoordinatePointColor.withOpacity(
-            0.2 * finalSlidableCoordinatePointColor.opacity,
+          finalSlidableCoordinatePointColor.withValues(
+            alpha: 0.2 * finalSlidableCoordinatePointColor.a,
           );
 
       _drawLineAndFillArea(
@@ -230,8 +231,9 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         lineColor: slidableCoordinatesStyle?.lineColor ??
             finalSlidableCoordinatePointColor,
         fillAreaColor: slidableCoordinatesStyle?.fillAreaColor ??
-            finalSlidableCoordinatePointColor
-                .withOpacity(0.5 * finalSlidableCoordinatePointColor.opacity),
+            finalSlidableCoordinatePointColor.withValues(
+              alpha: 0.5 * finalSlidableCoordinatePointColor.a,
+            ),
       );
 
       _drawCoordinates(
@@ -528,7 +530,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
         canvas
           ..drawPath(
             path,
-            _linePaint..color = lineColor.withOpacity(0),
+            _linePaint..color = lineColor.withAlpha(0),
           )
           ..drawPath(
             remaining,
@@ -566,7 +568,7 @@ class CoordinateSystemPainter<E extends Enum> extends CustomPainter {
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
             colors: <Color>[
-              fillAreaColor.withOpacity(0.2 * fillAreaColor.opacity),
+              fillAreaColor.withValues(alpha: 0.2 * fillAreaColor.a),
               fillAreaColor,
             ],
           ).createShader(
