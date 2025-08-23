@@ -449,11 +449,11 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
 
   void _forwardAnimationControllerWhenIsDismissed() {
     if (_slidableCoordsAnimationCtrl?.isDismissed ?? false) {
-      _slidableCoordsAnimationCtrl?.forward();
+      unawaited(_slidableCoordsAnimationCtrl?.forward());
     }
 
     if (_otherCoordsAnimationCtrl?.isDismissed ?? false) {
-      _otherCoordsAnimationCtrl?.forward();
+      unawaited(_otherCoordsAnimationCtrl?.forward());
     }
   }
 

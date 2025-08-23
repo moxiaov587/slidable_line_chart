@@ -17,13 +17,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup java sdk
         uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '11.x'
+          distribution: 'zulu'
+          java-version: '17'
 
 
       - name: Setup flutter sdk
@@ -50,13 +50,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup java sdk
         uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '11.x'
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Setup flutter sdk
         uses: subosito/flutter-action@v2
@@ -80,13 +80,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup java sdk
         uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '11.x'
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Setup flutter sdk
         uses: subosito/flutter-action@v2
@@ -109,13 +109,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup java sdk
         uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '11.x'
+          distribution: 'zulu'
+          java-version: '17'
 
       - name: Setup flutter sdk
         uses: subosito/flutter-action@v2
