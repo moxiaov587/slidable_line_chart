@@ -687,13 +687,9 @@ class SlidableLineChartState<E extends Enum> extends State<SlidableLineChart<E>>
     double min,
     double max, {
     required double value,
-  }) {
-    if (value > min && value < max) {
-      value = value.roundToDouble();
-    }
-
-    return value.clamp(min, max);
-  }
+  }) =>
+      (value > min && value < max ? value.roundToDouble() : value)
+          .clamp(min, max);
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
